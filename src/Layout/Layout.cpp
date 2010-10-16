@@ -86,7 +86,19 @@ int Layout::LayoutGenerator::getFruchtermanReingoldLayout(bool isInit)
 
 	igraph_vector_t *weights = 0;
 
-	igraph_layout_fruchterman_reingold_3d(&graph, &nodes_layout, STEP_COUNT,maxdelta,area,coolexp,repulserad,use_seed,STEP_SIZE,step_index,weights);	
+	igraph_layout_fruchterman_reingold_3d(
+		&graph, // const igraph_t *graph,
+		&nodes_layout, // igraph_matrix_t *res,
+		STEP_COUNT, // igraph_integer_t niter
+		maxdelta, // igraph_real_t maxdelta
+		area, // igraph_real_t volume
+		coolexp, // igraph_real_t coolexp
+		repulserad, // igraph_real_t repulserad
+		use_seed, // igraph_bool_t use_seed
+		// STEP_SIZE, // igraph_integer_t niter_of_step
+		// step_index, // igraph_integer_t step_index
+		weights // const igraph_vector_t *weight
+	);
 
 	float xpos, ypos, zpos;
         QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;

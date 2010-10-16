@@ -8,6 +8,7 @@
 #include <osgGA/GUIEventHandler>
 #include <osgGA/GUIEventAdapter>
 #include <osgGA/GUIActionAdapter>
+#include <osgGA/CameraManipulator>
 #include <osgViewer/Viewer>
 #include <osg/ref_ptr>
 #include <osg/Geode>
@@ -100,7 +101,7 @@ namespace Vwr
 		*  \param  cameraManipulator    camera manipulator
 		*  \param  coreGraph     core graph
 		*/
-		PickHandler(Vwr::CameraManipulator * cameraManipulator, Vwr::CoreGraph * coreGraph); 
+		PickHandler(osgGA::CameraManipulator * cameraManipulator, Vwr::CoreGraph * coreGraph);
 
 
 		/**
@@ -187,7 +188,7 @@ namespace Vwr
 		*  Vwr::CameraManipulator * cameraManipulator
 		*  \brief camera manipulator
 		*/
-		Vwr::CameraManipulator * cameraManipulator;
+		osgGA::CameraManipulator * cameraManipulator;
 
 		/**
 		*  Vwr::CoreGraph * coreGraph

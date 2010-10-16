@@ -1,5 +1,6 @@
 #include "QOSG/CoreWindow.h"
 #include "Util/Cleaner.h"
+#include "osgGA/TrackballManipulator"
 
 using namespace QOSG;
 
@@ -286,7 +287,10 @@ void CoreWindow::centerView(bool checked)
 	singleSelect->setChecked(false);
 	multiSelect->setChecked(false);	
 
-	viewerWidget->getCameraManipulator()->setCenter(viewerWidget->getPickHandler()->getSelectionCenter(false));
+	osgGA::TrackballManipulator *trackballManipulator =
+							dynamic_cast<osgGA::TrackballManipulator *>(viewerWidget->getCameraManipulator());
+
+	trackballManipulator->setCenter(viewerWidget->getPickHandler()->getSelectionCenter(false));
 }
 
 
@@ -352,7 +356,10 @@ void CoreWindow::loadFile()
 		tr("Open GraphML"), ".", tr("GraphML Files (*.graphml)"));
     Manager::GraphManager::getInstance()->loadGraph(fileName);
 
-	viewerWidget->getCameraManipulator()->home();
+    osgGA::TrackballManipulator *trackballManipulator =
+    	dynamic_cast<osgGA::TrackballManipulator *>(viewerWidget->getCameraManipulator());
+
+    trackballManipulator->home(0);
 }
 
 void CoreWindow::labelOnOff(bool)

@@ -2,12 +2,13 @@
 #include "Viewer/DataHelper.h"
 #include <osg/MatrixTransform>
 #include <osg/Projection>
+#include <osgGA/TrackballManipulator>
 
 #include "Manager/Manager.h"
 
 using namespace Vwr;
 
-PickHandler::PickHandler(Vwr::CameraManipulator * cameraManipulator, Vwr::CoreGraph * coreGraph)
+PickHandler::PickHandler(osgGA::CameraManipulator * cameraManipulator, Vwr::CoreGraph * coreGraph)
 {
 	//vytvorenie timera a vynulovanie premennych
 	timer = new QTimer();
@@ -370,7 +371,10 @@ bool PickHandler::doNodePick(osg::NodePath nodePath)
 	{
 		if (isAltPressed && pickMode == PickMode::NONE)
 		{
-			cameraManipulator->setCenter(n->getTargetPosition());
+			osgGA::TrackballManipulator *trackballManipulator =
+						dynamic_cast<osgGA::TrackballManipulator *>(cameraManipulator);
+						
+			trackballManipulator->setCenter(n->getTargetPosition());
 		}
 		else if (pickMode != PickMode::NONE)
 		{
@@ -409,8 +413,11 @@ bool PickHandler::doEdgePick(osg::NodePath nodePath, unsigned int primitiveIndex
 				{
 					osg::ref_ptr<osg::Vec3Array> coords = e->getCooridnates();
 
-					cameraManipulator->setCenter(DataHelper::getMassCenter(coords));
-					cameraManipulator->setDistance(Util::ApplicationConfig::get()->getValue("Viewer.PickHandler.PickedEdgeDistance").toFloat());
+					osgGA::TrackballManipulator *trackballManipulator =
+						dynamic_cast<osgGA::TrackballManipulator *>(cameraManipulator);
+
+					trackballManipulator->setCenter(DataHelper::getMassCenter(coords));
+					trackballManipulator->setDistance(Util::ApplicationConfig::get()->getValue("Viewer.PickHandler.PickedEdgeDistance").toFloat());
 				}
 				else if (pickMode != PickMode::NONE)
 				{

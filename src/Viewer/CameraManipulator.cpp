@@ -1,3 +1,4 @@
+#ifdef CAMERA_MANIPULATOR_ENABLED
 #include "Viewer/CameraManipulator.h"
 #include <osg/Quat>
 #include <osg/Notify>
@@ -685,3 +686,4 @@ void CameraManipulator::stop()
 	verticalSpeed = 0.0;
 	pitchSpeed = 0.0;
 }
+#endif // CAMERA_MANIPULATOR_ENABLED

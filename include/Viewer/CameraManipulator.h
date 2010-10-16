@@ -11,6 +11,7 @@
  * OpenSceneGraph Public License for more details.
 */
 
+#ifdef CAMERA_MANIPULATOR_ENABLED
 #ifndef Viewer_CameraManipulator
 #define Viewer_CameraManipulator 1
 
@@ -431,4 +432,4 @@ namespace Vwr{
 }
 
 #endif
-
+#endif // CAMERA_MANIPULATOR_ENABLED

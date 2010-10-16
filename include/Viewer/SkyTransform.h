@@ -5,6 +5,8 @@
 #ifndef VIEWER_SKY_TRANSFORM_DEF
 #define VIEWER_SKY_TRANSFORM_DEF 1
 
+#include <osgUtil/CullVisitor>
+
 namespace Vwr
 {
 	/**
