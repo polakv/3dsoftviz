@@ -86,6 +86,9 @@ namespace Data
 		*/
 		~Graph(void);
 
+		osg::ref_ptr<Data::Node> addHyperEdge(QString name, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, osg::ref_ptr<Data::Edge> hyperEdge, bool isOriented); 
+		osg::ref_ptr<Data::Node> getHyperNode(osg::ref_ptr<Data::Edge> hyperEdge); 
+
 
 		/**
 		*  \fn inline public static  getMetaStrength

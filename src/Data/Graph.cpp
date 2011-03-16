@@ -647,4 +647,82 @@ void Data::Graph::removeNode( osg::ref_ptr<Data::Node> node )
 			}
 		}
 	}
+	osg::ref_ptr<Data::Node> Data::Graph::addHyperEdge(QString name, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, osg::ref_ptr<Data::Edge> hyperEdge, bool isOriented) 
+{
+	Data::Type* mtype;
+
+	Data::Type* metype;
+
+			QList<Data::Type*> mtypes = getTypesByName(Data::GraphLayout::HYPER_NODE_TYPE);
+
+			if(mtypes.isEmpty())
+			{
+				//adding META_NODE_TYPE settings if necessary
+				QMap<QString, QString> *settings = new QMap<QString, QString>;
+
+				settings->insert("scale", "5");
+				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
+				settings->insert("color.R", "1");
+				settings->insert("color.G", "1");
+				settings->insert("color.B", "1");
+				settings->insert("color.A", "1");
+
+				mtype = this->addType(Data::GraphLayout::HYPER_NODE_TYPE, settings);
+			}
+			else
+			{
+				mtype = mtypes[0];
+			}
+
+			QList<Data::Type*> metypes = getTypesByName(Data::GraphLayout::HYPER_EDGE_TYPE);
+
+			if(mtypes.isEmpty())
+			{
+				//adding META_EDGE_TYPE settings if necessary
+				QMap<QString, QString> *settings = new QMap<QString, QString>;
+
+				settings->insert("scale", "Viewer.Textures.EdgeScale");
+				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
+				settings->insert("color.R", "1");
+				settings->insert("color.G", "1");
+				settings->insert("color.B", "1");
+				settings->insert("color.A", "1");
+
+				metype = this->addType(Data::GraphLayout::HYPER_EDGE_TYPE, settings);
+			}
+			else
+			{
+				metype = metypes[0];
+			}
+
+			//adding HYPER edges w/ HYPER node
+			osg::ref_ptr<Data::Node> parallelNode = addNode("PNode", mtype);
+			if(getHyperNode(hyperEdge)!=null){
+				osg::ref_ptr<Data::Node> myHyperNode = getHyperNode(hyperEdge)
+				if(myHyperNode!=null)
+					parallelNode=myHyperNode;
+			}
+
+			osg::ref_ptr<Data::Edge> edge1 = new Data::Edge(this->incEleIdCounter(), name, this, srcNode, parallelNode, metype, isOriented);
+			edge1->linkNodes(this->edges);
+
+			this->edgesByType.insert(type->getId(),edge1);
+
+			osg::ref_ptr<Data::Edge> edge2 = new Data::Edge(this->incEleIdCounter(), name, this, parallelNode, dstNode, metype, isOriented);
+			edge2->linkNodes(this->edges);
+
+			this->edgesByType.insert(type->getId(),edge2);
+
+}
+osg::ref_ptr<Data::Node> Data::Graph::getHyperNode( osg::ref_ptr<Data::Edge> hyperEdge) 
+{
+	osg::ref_ptr<Data::Node> hyperNode = NULL;
+	if(hyperEdge->getSrcNode()->getType()->getName()=="hyperNode")
+		hyperNode = hyperEdge->getSrcNode();
+	if(hyperEdge->getDstNode()->getType()->getName()=="hyperNode")
+		hyperNode = hyperEdge->getDstNode();
+	if(hyperNode == NULL)
+		return NULL;
+	return hyperNode;
+}
 }
