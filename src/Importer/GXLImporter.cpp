@@ -1,46 +1,51 @@
 #include "Importer/GXLImporter.h"
 //-----------------------------------------------------------------------------
+#include "Importer/GraphOperations.h"
+#include "Importer/ReadNodesStore.h"
+//-----------------------------------------------------------------------------
+#include <QtXml/QXmlStreamReader>
+//-----------------------------------------------------------------------------
+#include <memory>
 
 namespace Importer {
 
 bool GXLImporter::import (
 	ImporterContext &context
 ) {
-	// context
-	context_ = &context;
+	QXmlStreamReader xml (&(context.getStream ()));
 
-	// helpers
-	xml_.reset (new QXmlStreamReader (&(context_->getStream ())));
-	graphOp_.reset (new GraphOperations (context_->getGraph ()));
-	readNodes_.reset (new ReadNodesStore());
+	GraphOperations graphOp (context.getGraph ());
 
-	// default types
-	edgeType = NULL;
-	nodeType = NULL;
-	(void)graphOp_->addDefaultTypes (edgeType, nodeType);
+	ReadNodesStore readNodes;
 
 	bool ok = true;
 
-	// check XML
 	if (ok) {
-		ok = !xml_->hasError ();
+		ok = !xml.hasError ();
 
-		context_->getInfoHandler ().reportError (ok, "XML format error.");
+		context.getInfoHandler ().reportError (ok, "XML format error.");
 	}
 
-	while (ok && !xml_->atEnd ()) {
+	bool edgeOrientedDefault = false;
+	bool edgeOrientedDefaultForce = false;
+
+	Data::Type *edgeType = NULL;
+	Data::Type *nodeType = NULL;
+	(void)graphOp.addDefaultTypes (edgeType, nodeType);
+
+	while (ok && !xml.atEnd ()) {
 		QXmlStreamReader::TokenType token;
 		if (ok) {
-			token = xml_->readNext();
+			token = xml.readNext();
 		}
 
 		if (ok) {
 			if (
 				(token == QXmlStreamReader::StartElement)
 				&&
-				(xml_->name () == "graph")
+				(xml.name () == "graph")
 			) {
-				QXmlStreamAttributes attrs = xml_->attributes();
+				QXmlStreamAttributes attrs = xml.attributes();
 
 				QString graphName;
 				if (ok) {
@@ -48,113 +53,45 @@ bool GXLImporter::import (
 
 					ok = ("" != graphName);
 
-					context_->getInfoHandler ().reportError (ok, "Graph name can not be empty.");
+					context.getInfoHandler ().reportError (ok, "Graph name can not be empty.");
 				}
 
 				if (ok) {
-					// ok = (graphName == context_->getGraph ().setName (graphName));
+					// ok = (graphName == context.getGraph ().setName (graphName));
 
-					context_->getInfoHandler ().reportError (ok, "Unable to set graph name.");
+					context.getInfoHandler ().reportError (ok, "Unable to set graph name.");
 				}
 
 				if (ok) {
-					ok = parseGraph ();
-				}
-			}
-		}
+					QStringRef graphEdgeMode = attrs.value ("edgemode");
+					if (!graphEdgeMode.isEmpty ()) {
+						if (graphEdgeMode == "defaultdirected") {
+							edgeOrientedDefault = true;
+							edgeOrientedDefaultForce = false;
+						} else if (graphEdgeMode == "defaultundirected") {
+							edgeOrientedDefault = false;
+							edgeOrientedDefaultForce = false;
+						} else if (graphEdgeMode == "directed") {
+							edgeOrientedDefault = true;
+							edgeOrientedDefaultForce = true;
+						} else if (graphEdgeMode == "undirected") {
+							edgeOrientedDefault = false;
+							edgeOrientedDefaultForce = true;
+						} else {
+							ok = false;
 
-		if (ok) {
-			ok = !xml_->hasError ();
-
-			context_->getInfoHandler ().reportError (ok, "XML format error.");
-		}
-	}
-
-	xml_->clear ();
-
-	return ok;
-}
-
-bool GXLImporter::parseGraph (void) {
-	bool ok = true;
-
-	bool edgeOrientedDefault = false;
-	bool edgeOrientedDefaultForce = false;
-
-	// current "graph" node
-	if (ok) {
-		QXmlStreamAttributes attrs = xml_->attributes();
-
-		QStringRef graphEdgeMode = attrs.value ("edgemode");
-		if (!graphEdgeMode.isEmpty ()) {
-			if (graphEdgeMode == "defaultdirected") {
-				edgeOrientedDefault = true;
-				edgeOrientedDefaultForce = false;
-			} else if (graphEdgeMode == "defaultundirected") {
-				edgeOrientedDefault = false;
-				edgeOrientedDefaultForce = false;
-			} else if (graphEdgeMode == "directed") {
-				edgeOrientedDefault = true;
-				edgeOrientedDefaultForce = true;
-			} else if (graphEdgeMode == "undirected") {
-				edgeOrientedDefault = false;
-				edgeOrientedDefaultForce = true;
-			} else {
-				ok = false;
-
-				context_->getInfoHandler ().reportError ("Invalid edgemode value.");
-			}
-		}
-	}
-
-	osg::ref_ptr<Data::Node> currentNode (NULL);
-	osg::ref_ptr<Data::Edge> currentEdge (NULL);
-	bool inHyperedge = false;
-
-	while (ok && !xml_->atEnd ()) {
-		QXmlStreamReader::TokenType token;
-		if (ok) {
-			token = xml_->readNext();
-		}
-
-		if (ok) {
-			// subgraph
-			if (
-				(token == QXmlStreamReader::StartElement)
-				&&
-				(xml_->name () == "graph")
-			) {
-				if (ok) {
-					if ((bool)currentNode) {
-						// TODO: begin subgraph in node
-					} else if ((bool)currentEdge) {
-						// TODO: begin subgraph in edge
-					} else {
-						ok = false;
-
-						context_->getInfoHandler ().reportError ("Subgraph found, but it is not placed in node/edge.");
+							context.getInfoHandler ().reportError ("Invalid edgemode value.");
+						}
 					}
 				}
-
-				if (ok) {
-					ok = parseGraph ();
-				}
-				// TODO: end subgraph somewhere
 			}
 
-			// node
 			if (
 				(token == QXmlStreamReader::StartElement)
 				&&
-				(xml_->name () == "node")
+				(xml.name () == "node")
 			) {
-				if (ok) {
-					ok = (!currentNode) && (!currentEdge) && (!inHyperedge);
-
-					context_->getInfoHandler ().reportError (ok, "Node in node/edge/hyperedge found.");
-				}
-
-				QXmlStreamAttributes attrs = xml_->attributes();
+				QXmlStreamAttributes attrs = xml.attributes();
 
 				QString nodeName;
 				if (ok) {
@@ -162,56 +99,29 @@ bool GXLImporter::parseGraph (void) {
 
 					ok = !(nodeName.isEmpty ());
 
-					context_->getInfoHandler ().reportError (ok, "Node ID can not be empty.");
+					context.getInfoHandler ().reportError (ok, "Node ID can not be empty.");
 				}
 
 				osg::ref_ptr<Data::Node> node (NULL);
 				if (ok) {
-					node = context_->getGraph ().addNode (nodeName, nodeType);
+					node = context.getGraph ().addNode (nodeName, nodeType);
 
 					ok = node.valid ();
 
-					context_->getInfoHandler ().reportError (ok, "Unable to add new node.");
+					context.getInfoHandler ().reportError (ok, "Unable to add new node.");
 				}
 
 				if (ok) {
-					readNodes_->addNode (nodeName, node);
-				}
-
-				if (ok) {
-					currentNode = node;
+					readNodes.addNode (nodeName, node);
 				}
 			}
 
-			if (
-				(token == QXmlStreamReader::EndElement)
-				&&
-				(xml_->name () == "node")
-			) {
-				if (ok) {
-					ok = currentNode;
-
-					context_->getInfoHandler ().reportError (ok, "Node end without matched node begin.");
-				}
-
-				if (ok) {
-					(void)currentNode.release();
-				}
-			}
-
-			// edge
 			if (
 				(token == QXmlStreamReader::StartElement)
 				&&
-				(xml_->name () == "edge")
+				(xml.name () == "edge")
 			) {
-				if (ok) {
-					ok = (!currentNode) && (!currentEdge) && (!inHyperedge);
-
-					context_->getInfoHandler ().reportError (ok, "Edge in node/edge/hyperedge found.");
-				}
-
-				QXmlStreamAttributes attrs = xml_->attributes();
+				QXmlStreamAttributes attrs = xml.attributes();
 
 				bool oriented = edgeOrientedDefault;
 				if (ok) {
@@ -227,7 +137,7 @@ bool GXLImporter::parseGraph (void) {
 								oriented = true;
 							} else {
 								ok = false;
-								context_->getInfoHandler ().reportError ("Can not replace global edge mode with edgeIsDirected=\"true\".");
+								context.getInfoHandler ().reportError ("Can not replace global edge mode with edgeIsDirected=\"true\".");
 							}
 						} else if (edgeIsDirected == "false") {
 							if (
@@ -238,10 +148,10 @@ bool GXLImporter::parseGraph (void) {
 								oriented = false;
 							} else {
 								ok = false;
-								context_->getInfoHandler ().reportError ("Can not replace global edge mode with edgeIsDirected=\"false\".");
+								context.getInfoHandler ().reportError ("Can not replace global edge mode with edgeIsDirected=\"false\".");
 							}
 						} else {
-							context_->getInfoHandler ().reportError (ok, "Invalid edgeIsDirected value.");
+							context.getInfoHandler ().reportError (ok, "Invalid edgeIsDirected value.");
 						}
 					}
 				}
@@ -252,7 +162,7 @@ bool GXLImporter::parseGraph (void) {
 
 					ok = !(nodeFromName.isEmpty ());
 
-					context_->getInfoHandler ().reportError (ok, "Edge \"from\" attribute can not be empty.");
+					context.getInfoHandler ().reportError (ok, "Edge \"from\" attribute can not be empty.");
 				}
 
 				QString nodeToName;
@@ -261,187 +171,48 @@ bool GXLImporter::parseGraph (void) {
 
 					ok = !(nodeToName.isEmpty ());
 
-					context_->getInfoHandler ().reportError (ok, "Edge \"to\" attribute can not be empty.");
+					context.getInfoHandler ().reportError (ok, "Edge \"to\" attribute can not be empty.");
 				}
 
 				QString edgeName = nodeFromName + nodeToName;
 
 				if (ok) {
-					ok = readNodes_->contains (nodeFromName);
+					ok = readNodes.contains (nodeFromName);
 
-					context_->getInfoHandler ().reportError (ok, "Edge references invalid source node.");
+					context.getInfoHandler ().reportError (ok, "Edge references invalid source node.");
 				}
 
 				if (ok) {
-					ok = readNodes_->contains (nodeToName);
+					ok = readNodes.contains (nodeToName);
 
-					context_->getInfoHandler ().reportError (ok, "Edge references invalid destination node.");
+					context.getInfoHandler ().reportError (ok, "Edge references invalid destination node.");
 				}
 
-				osg::ref_ptr<Data::Edge> edge (NULL);
 				if (ok) {
-					edge = context_->getGraph().addEdge(
+					osg::ref_ptr<Data::Edge> edge = context.getGraph().addEdge(
 						edgeName,
-						readNodes_->get (nodeFromName),
-						readNodes_->get (nodeToName),
+						readNodes.get (nodeFromName),
+						readNodes.get (nodeToName),
 						edgeType,
 						oriented
 					);
 
 					// ok = edge.valid ();
 
-					// context_->getInfoHandler ().reportError (ok, "Unable to add new edge.");
+					// context.getInfoHandler ().reportError (ok, "Unable to add new edge.");
 					// can not be checked because addEdge returns null when a multiedge is added
 				}
-
-				if (ok) {
-					currentEdge = edge;
-				}
-			}
-
-			if (
-				(token == QXmlStreamReader::EndElement)
-				&&
-				(xml_->name () == "edge")
-			) {
-				if (ok) {
-					ok = currentEdge;
-
-					context_->getInfoHandler ().reportError (ok, "Edge end without matched edge begin.");
-				}
-
-				if (ok) {
-					(void)currentEdge.release();
-				}
-			}
-
-			// hyperedge
-			if (
-				(token == QXmlStreamReader::StartElement)
-				&&
-				(xml_->name () == "rel")
-			) {
-				if (ok) {
-					ok = (!currentNode) && (!currentEdge) && (!inHyperedge);
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge in node/edge/hyperedge found.");
-				}
-
-				if (ok) {
-					// TODO: begin hyperedge
-				}
-
-				if (ok) {
-					inHyperedge = true;
-				}
-			}
-
-			if (
-				(token == QXmlStreamReader::EndElement)
-				&&
-				(xml_->name () == "rel")
-			) {
-				if (ok) {
-					ok = inHyperedge;
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge end without matched hyperedge begin.");
-				}
-
-				if (ok) {
-					inHyperedge = false;
-				}
-			}
-
-			// hyperedge endpoint
-			if (
-				(token == QXmlStreamReader::StartElement)
-				&&
-				(xml_->name () == "relend")
-			) {
-				if (ok) {
-					ok = inHyperedge;
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge endpoint without hyperedge.");
-				}
-
-				QXmlStreamAttributes attrs = xml_->attributes();
-
-				QString targetName;
-				if (ok) {
-					targetName = attrs.value ("target").toString ();
-
-					ok = !(targetName.isEmpty ());
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge endpoint \"target\" attribute can not be empty.");
-				}
-
-				if (ok) {
-					ok = readNodes_->contains (targetName);
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge endpoint references invalid target node.");
-				}
-
-				osg::ref_ptr<Data::Node> target (NULL);
-				if (ok) {
-					target = readNodes_->get(targetName);
-				}
-
-				QString direction;
-				if (ok) {
-					direction = attrs.value ("direction").toString ();
-
-					if (direction == QString("none")) {
-						direction = QString();
-					}
-
-					ok =
-						direction.isEmpty()
-						||
-						(direction == QString("in"))
-						||
-						(direction == QString("out"))
-					;
-
-					context_->getInfoHandler ().reportError (ok, "Hyperedge endpoint - invalid direction.");
-				}
-
-				if (ok) {
-					if (direction.isEmpty()) {
-						direction = "none";
-					}
-				}
-
-				if (ok) {
-					// TODO: add endpoint
-				}
-			}
-
-			if (
-				(token == QXmlStreamReader::EndElement)
-				&&
-				(xml_->name () == "relend")
-			) {
-				// TODO:
-			}
-
-			// this graph end
-			if (
-				(token == QXmlStreamReader::EndElement)
-				&&
-				(xml_->name () == "graph")
-			) {
-				break;
 			}
 		}
 
 		if (ok) {
-			ok = !xml_->hasError ();
+			ok = !xml.hasError ();
 
-			context_->getInfoHandler ().reportError (ok, "XML format error.");
+			context.getInfoHandler ().reportError (ok, "XML format error.");
 		}
 	}
 
-	// TODO: graph in hyperedge
+	xml.clear ();
 
 	return ok;
 }
