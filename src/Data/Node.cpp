@@ -55,10 +55,10 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 	this->usingInterpolation = true;
 
 	//nastavenie farebneho typu
-	float r = type->getSettings()->value("color.R").toFloat();
+	/*float r = type->getSettings()->value("color.R").toFloat();
 	float g = type->getSettings()->value("color.G").toFloat();
 	float b = type->getSettings()->value("color.B").toFloat();
-	float a = type->getSettings()->value("color.A").toFloat();
+	float a = type->getSettings()->value("color.A").toFloat();*/
 
 	//this->setColor(osg::Vec4(r, g, b, a));
 }

@@ -17,10 +17,10 @@ Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* src
     this->selected = false;
 	this->inDB = false;
 	this->scale = scaling;
-    float r = type->getSettings()->value("color.R").toFloat();
+    /*float r = type->getSettings()->value("color.R").toFloat();
     float g = type->getSettings()->value("color.G").toFloat();
     float b = type->getSettings()->value("color.B").toFloat();
-    float a = type->getSettings()->value("color.A").toFloat();
+    float a = type->getSettings()->value("color.A").toFloat();*/
     
     //this->edgeColor = osg::Vec4(r, g, b, a);
     	

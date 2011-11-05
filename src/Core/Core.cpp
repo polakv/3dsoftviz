@@ -5,6 +5,7 @@
  */
 
 #include "Core/Core.h"
+#include "Core/Example.h"
 
 AppCore::Core * AppCore::Core::core;
 
@@ -20,7 +21,7 @@ AppCore::Core::Core(QApplication * app)
 	//Counting forces for layout algorithm, init layout, viewer and window
     this->alg = new Layout::FRAlgorithm();
 
-    this->thr = new Layout::LayoutThread(this->alg);
+    //this->thr = new Layout::LayoutThread(this->alg);
     //this->cg = new Vwr::CoreGraph();
     //this->cw = new QOSG::CoreWindow(0, this->cg, app, this->thr);
     /*this->cw->resize(
@@ -38,6 +39,12 @@ AppCore::Core::Core(QApplication * app)
 		)
     );*/
     //this->cw->show();
+
+	this->alg->SetParameters(10,0.7,1,true);
+	this->alg->SetGraph(AppCore::Example::CreateCustomGraph());
+	this->thr = new Layout::LayoutThread(this->alg);
+    this->thr->start();
+    this->thr->play();
 
     app->exec();
 }
@@ -59,7 +66,7 @@ void AppCore::Core::restartLayout()
 		this->alg->SetGraph(new Data::Graph)
 	*/
 
-    //this->alg->SetGraph(Manager::GraphManager::getInstance()->getActiveGraph());
+	
 
 	/*
 

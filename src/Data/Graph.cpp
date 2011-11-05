@@ -258,7 +258,7 @@ Data::Node* Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, D
 	//vytvorime novy objekt uzla
     Data::Node* node = new Data::Node(id, name, type, this->getNodeScale(), this, position);
 
-    this->newNodes.insert(node->getId(),node);
+    //this->newNodes.insert(node->getId(),node);
 
 	//podla typu ho priradime danemu zoznamu
     if(type!=NULL && type->isMeta()) {
@@ -904,7 +904,7 @@ float Data::Graph::getNodeScale()
 	//vraciame skalu grafu potrebnu pre vnorene grafy
 	int level;
 	level = this->parent_id.size();
-	float offset = 0; //Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale").toFloat();
+	float offset = 3; //Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale").toFloat();
 
 	for(int i=0; i<level; i++)
 	{
