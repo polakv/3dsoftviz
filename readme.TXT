@@ -4,6 +4,7 @@ Vytvorenie nového grafu:
 Spustenie Layoutovacieho algoritmu
 	-spravil som vzorovy priklad, v triede Example sa vytvara vzorovy graf
 	-spustanie je v metode AppCore::Core::Core(QApplication * app)
+	-ukoncenie nastane v metode FRAlgorithm::Run, ked metoda iterate vrati false
 
 --------------------------------------------------------------------------------------------
 Prevedené úpravy:

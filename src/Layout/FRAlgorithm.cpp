@@ -155,15 +155,16 @@ void FRAlgorithm::Run()
 		{			
 			// slucka pozastavenia - ak je pauza
 			// alebo je graf zmrazeny (spravidla pocas editacie)
-			//while (notEnd && (state != RUNNING || graph->isFrozen()))
-			//{
+			while (notEnd && (state != RUNNING || graph->isFrozen()))
+			{
 				// [GrafIT][!] not 100% OK (e.g. msleep(100) remains here), but we have fixed the most obvious multithreading issues of the original code
 				isIterating_mutex.unlock();
 				QThread::msleep(100);
 				isIterating_mutex.lock();
-			//}
+			}
 			if (!iterate()) {
-				//graph->setFrozen(true);
+				graph->setFrozen(true);
+				printf("koniec");
 			}			
 		}
 
