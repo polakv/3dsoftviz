@@ -5,7 +5,7 @@ using namespace Layout;
 LayoutThread::LayoutThread(Layout::FRAlgorithm* alg)
 {
 	this->alg = alg;
-	appConf = Util::ApplicationConfig::get();
+	//appConf = Util::ApplicationConfig::get();
 }
 
 LayoutThread::~LayoutThread(void)
@@ -14,7 +14,7 @@ LayoutThread::~LayoutThread(void)
 
 void LayoutThread::run()
 {
-	this->sleep(appConf->getValue("Layout.Thread.StartSleepTime").toLong());
+	//this->sleep(appConf->getValue("Layout.Thread.StartSleepTime").toLong());
 	alg->Run();
 }
 void LayoutThread::pause()

@@ -4,10 +4,10 @@
  */
 #include "Data/Graph.h"
 #include "Data/GraphLayout.h"
-#include "Layout/ShapeGetter_Sphere_AroundNode.h"
+//#include "Layout/ShapeGetter_Sphere_AroundNode.h"
 #include <QSharedPointer>
 
-Data::Graph::Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,osg::ref_ptr<Data::Node> > *nodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *edges,QMap<qlonglong,osg::ref_ptr<Data::Node> > *metaNodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *metaEdges, QMap<qlonglong,Data::Type*> *types)
+Data::Graph::Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,Data::Node* > *nodes, QMap<qlonglong,Data::Edge* > *edges,QMap<qlonglong,Data::Node* > *metaNodes, QMap<qlonglong,Data::Edge* > *metaEdges, QMap<qlonglong,Data::Type*> *types)
 {
     //tento konstruktor je uz zastaraly a neda sa realne pouzit - uzly musia mat priradeny graph, ktory sa prave vytvarat, rovnako edge, type, metatype (ten musi mat naviac aj layout, ktory opat musi mat graph)
     this->inDB = false;
@@ -20,14 +20,14 @@ Data::Graph::Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<ql
 	foreach(qlonglong i,nodes->keys()) {
 	    this->nodesByType.insert(nodes->value(i)->getType()->getId(),nodes->value(i));
 	}
-	
+
 	this->edges = edges;
     foreach(qlonglong i,edges->keys()) {
         this->edgesByType.insert(edges->value(i)->getType()->getId(),edges->value(i));
     }
     
 	this->types = types;
-	
+
 	this->metaEdges = metaEdges;
     foreach(qlonglong i,metaEdges->keys()) {
         this->metaEdgesByType.insert(metaEdges->value(i)->getType()->getId(),metaEdges->value(i));
@@ -43,9 +43,9 @@ Data::Graph::Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<ql
 	this->layout_id_counter = 0; //POZOR toto asi treba inak poriesit, teraz to predpoklada ze ziadne layouty nemame co je spravne, lenze bacha na metatypy, ktore layout mat musia !
 
 	this->frozen = false;
-	
+
 	this->typesByName = new QMultiMap<QString, Data::Type*>();
-	
+
 	if(this->types!=NULL && this->types->size()>0) {
 	    foreach(qlonglong i, this->types->keys()) {
 	        this->typesByName->insert(this->types->value(i)->getName(), this->types->value(i));
@@ -64,11 +64,11 @@ Data::Graph::Graph(qlonglong graph_id, QString name, qlonglong layout_id_counter
     this->conn = conn;
     this->selectedLayout = NULL;
     
-    this->nodes = new QMap<qlonglong,osg::ref_ptr<Data::Node> >();
-    this->edges = new QMap<qlonglong,osg::ref_ptr<Data::Edge> >();
+    this->nodes = new QMap<qlonglong,Data::Node* >();
+    this->edges = new QMap<qlonglong,Data::Edge* >();
     this->types = new QMap<qlonglong,Data::Type*>();
-    this->metaEdges = new QMap<qlonglong,osg::ref_ptr<Data::Edge> >();
-    this->metaNodes = new QMap<qlonglong,osg::ref_ptr<Data::Node> >();
+    this->metaEdges = new QMap<qlonglong,Data::Edge* >();
+    this->metaNodes = new QMap<qlonglong,Data::Node* >();
     this->frozen = false;
     this->typesByName = new QMultiMap<QString, Data::Type*>();
 }
@@ -139,78 +139,18 @@ Data::Graph::~Graph(void)
     this->conn = NULL;
 }
 
-bool Data::Graph::saveGraphToDB(QSqlDatabase* conn, Data::Graph * graph)
-{
-	//ukladame cely graf do DB
-	if(Model::NodeDAO::addNodesToDB(conn, graph->nodes) 
-		&& Model::EdgeDAO::addEdgesToDB(conn, graph->edges))
-	{
-		//uspesne ulozenie do DB
-		qDebug() << "[Data::Graph::saveGraphToDB] Graph was saved to DB.";
-		return true;
-	}
-	else
-	{
-		//neuspesne ulozenie do DB
-		qDebug() << "[Data::Graph::saveGraphToDB] Graph wasn't saved to DB.";
-		return false;
-	}
-		
-	return false;
-}
-
-bool Data::Graph::saveLayoutToDB(QSqlDatabase* conn, Data::Graph * graph)
-{
-	//ukladame leyout do DB
-	QMap<qlonglong, qlonglong> newMetaNodeID;
-	QMap<qlonglong, qlonglong> newMetaEdgeID;
-
-	newMetaNodeID = Model::NodeDAO::getNewMetaNodesId(conn, graph->getId(), graph->metaNodes);
-	newMetaEdgeID = Model::EdgeDAO::getNewMetaEdgesId(conn, graph->getId(), graph->metaEdges);
-
-	if(Model::NodeDAO::addMetaNodesToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID) 
-		&& Model::NodeDAO::addNodesPositionsToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID, true)
-		&& Model::NodeDAO::addNodesColorToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID, true)
-		&& Model::NodeDAO::addNodesPositionsToDB(conn, graph->nodes, graph->selectedLayout, newMetaNodeID, false)
-		&& Model::NodeDAO::addNodesColorToDB(conn, graph->nodes, graph->selectedLayout, newMetaNodeID, false)
-		&& Model::EdgeDAO::addMetaEdgesToDB(conn, graph->metaEdges, graph->selectedLayout, newMetaNodeID, newMetaEdgeID)
-		&& Model::EdgeDAO::addEdgesColorToDB(conn, graph->edges, graph->selectedLayout, newMetaNodeID, newMetaEdgeID, false)
-		&& Model::EdgeDAO::addEdgesColorToDB(conn, graph->metaEdges, graph->selectedLayout, newMetaNodeID, newMetaEdgeID, true)
-		&& Model::NodeDAO::addNodesScaleToDB(conn, graph->nodes, graph->selectedLayout, newMetaNodeID, false, graph->getNodeScale())
-		&& Model::NodeDAO::addNodesScaleToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID, true, graph->getNodeScale())
-		&& Model::EdgeDAO::addEdgesScaleToDB(conn, graph->edges, graph->selectedLayout, newMetaNodeID, newMetaEdgeID, false, graph->getEdgeScale())
-		&& Model::EdgeDAO::addEdgesScaleToDB(conn, graph->metaEdges, graph->selectedLayout, newMetaNodeID, newMetaEdgeID, true, graph->getEdgeScale())
-		&& Model::NodeDAO::addNodesMaskToDB(conn, graph->nodes, graph->selectedLayout, newMetaNodeID, false)
-		&& Model::NodeDAO::addNodesMaskToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID, true)
-		&& Model::NodeDAO::addNodesParentToDB(conn, graph->nodes, graph->selectedLayout, newMetaNodeID, false)
-		&& Model::NodeDAO::addNodesParentToDB(conn, graph->metaNodes, graph->selectedLayout, newMetaNodeID, true))
-	{
-		//uspesne ulozenie do DB
-		qDebug() << "[Data::Graph::saveLayoutToDB] Layout was saved to DB.";
-		return true;
-	}
-	else
-	{
-		//neuspesne ulozenie do DB
-		qDebug() << "[Data::Graph::saveLayoutToDB] Layout wasn't saved to DB.";
-		return false;
-	}
-		
-	return false;
-}
-
 Data::GraphLayout* Data::Graph::addLayout(QString layout_name)
 {
 	//Vytvarame novy layout pre graf
-    bool error;
+    /*bool error;
     if(this->layouts.isEmpty()) { //na zaciatok ak ziadne ine layouty nemame, sa pokusime nacitat layouty z DB
         this->layouts = this->getLayouts(&error);
     }
-
+	*/
 	//layouty bude do DB pridavat user, nebudu sa pridavat automaticky
 	//layout_id nebudeme brat z DB, lebo layout tam nemusi byt, preto vzdy nastavime na 1
     Data::GraphLayout* layout = new Data::GraphLayout(1,this,layout_name,this->conn);
-    
+    /*
     if(layout==NULL && (this->conn==NULL || !this->conn->isOpen())) { //nepodarilo sa vytvorit GraphLayout - nejaky problem s pripojenim na DB;
         //vytvorime si nahradny layout aby sme mohli bezat aj bez pripojenia k DB
     
@@ -222,49 +162,20 @@ Data::GraphLayout* Data::Graph::addLayout(QString layout_name)
     }
     
     this->layouts.insert(layout->getId(),layout);
-    
+    */
     return layout;
-}
-
-QMap<qlonglong, Data::GraphLayout*> Data::Graph::getLayouts(bool* error)
-{
-    if(this->layouts.isEmpty()) { //ak ziadne layouty nemame, skusime ich nacitat z DB, ak uz nejake mame, tak sme tento krok uz vykonali
-        this->layouts = Model::GraphLayoutDAO::getLayouts(this, this->conn, error);
-        
-        if(!this->layouts.isEmpty()) { //nastavime spravne layout_id_counter
-            QMapIterator<qlonglong, Data::GraphLayout*> i(this->layouts);
-            i.toBack();
-            if(i.hasPrevious()) {
-                this->layout_id_counter = i.previous().value()->getId();
-            }
-        }
-    }
-    
-    return this->layouts;
 }
 
 bool Data::Graph::removeLayout(Data::GraphLayout* layout)
 {
-    if(Model::GraphLayoutDAO::removeLayout(layout, this->conn) || !layout->isInDB()) {
+    //if(Model::GraphLayoutDAO::removeLayout(layout, this->conn) || !layout->isInDB()) {
         //layout sa podarilo odstranit z DB alebo v DB vobec nebol -> odstranime vsetky MetaType, ktore patria danemu layout
         
         if(layout==this->selectedLayout) this->selectLayout(NULL);
         this->layouts.remove(layout->getId());
-    }
+    //}
     
     return false;
-}
-
-QString Data::Graph::setName(QString name)
-{
-	//nastavyme nazov grafu
-    QString newName = Model::GraphDAO::setName(name,this,this->conn);
-    
-    if(newName!=NULL || (conn==NULL || !conn->isOpen())) { //nastavime nove meno ak sa nam ho podarilo nastavit v DB, alebo ak nemame vobec pripojenie k DB (pre offline verziu)
-        this->name = newName;
-    }
-    
-    return this->name;
 }
 
 bool Data::Graph::isInSameGraph(Data::Node * nodeA, Data::Node * nodeB)
@@ -277,7 +188,7 @@ bool Data::Graph::isInSameGraph(Data::Node * nodeA, Data::Node * nodeB)
 	return false;
 }
 
-osg::ref_ptr<Data::Node> Data::Graph::addNode(QString name, Data::Type* type, osg::Vec3f position)
+Data::Node* Data::Graph::addNode(QString name, Data::Type* type, osg::Vec3f position)
 {
 	Data::Type* metype;
 
@@ -291,8 +202,8 @@ osg::ref_ptr<Data::Node> Data::Graph::addNode(QString name, Data::Type* type, os
 			//pridame metatype ak este nie je vytvoreny
 			QMap<QString, QString> *settings = new QMap<QString, QString>;
 
-				settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
-				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
+				//settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
+				//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
 				settings->insert("color.R", "1");
 				settings->insert("color.G", "0");
 				settings->insert("color.B", "0");
@@ -308,15 +219,15 @@ osg::ref_ptr<Data::Node> Data::Graph::addNode(QString name, Data::Type* type, os
 		type = metype;
 	}
 
-    osg::ref_ptr<Data::Node> node = new Data::Node(this->incEleIdCounter(), name, type, this->getNodeScale(), this, position);
+    Data::Node* node = new Data::Node(this->incEleIdCounter(), name, type, this->getNodeScale(), this, position);
 
 	node->setNestedParent(NULL);
 
 	//pridanie do zoznamu vnorenych uzlov
 	if(this->parent_id.count()>0)
 	{
-		this->nestedNodes.insert(node.get());
-		this->nestetSubGraphs.last().insert(node.get());
+		this->nestedNodes.insert(node);
+		this->nestetSubGraphs.last().insert(node);
 	}
 
 	//pridame vnoreny uzol
@@ -342,13 +253,13 @@ osg::ref_ptr<Data::Node> Data::Graph::addNode(QString name, Data::Type* type, os
     return node;
 }
 
-osg::ref_ptr<Data::Node> Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position)
+Data::Node* Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position)
 {
 	//vytvorime novy objekt uzla
-    osg::ref_ptr<Data::Node> node = new Data::Node(id, name, type, this->getNodeScale(), this, position);
+    Data::Node* node = new Data::Node(id, name, type, this->getNodeScale(), this, position);
 
     this->newNodes.insert(node->getId(),node);
-	
+
 	//podla typu ho priradime danemu zoznamu
     if(type!=NULL && type->isMeta()) {
         this->metaNodes->insert(node->getId(),node);
@@ -363,31 +274,31 @@ osg::ref_ptr<Data::Node> Data::Graph::addNode(qlonglong id, QString name, Data::
 
 	if(this->parent_id.count()>0)
 	{
-		this->nestedNodes.insert(node.get());
+		this->nestedNodes.insert(node);
 	}
     
     return node;
 }
 
-osg::ref_ptr<Data::Node> Data::Graph::mergeNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes, osg::Vec3f position)
+Data::Node* Data::Graph::mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position)
 {
 	//vyratame velkost zluceneho uzla podla velkosti zlucovanych uzlov
 	float scale = this->getNodeScale() + (selectedNodes->count() / 2);
 
 	//vytvorime novy zluceny uzol
-	osg::ref_ptr<Data::Node> mergedNode = new Data::Node(this->incEleIdCounter(), "mergedNode", this->getNodeMetaType(), scale, this, position);
-	mergedNode->setColor(osg::Vec4(0, 0, 1, 1));
+	Data::Node* mergedNode = new Data::Node(this->incEleIdCounter(), "mergedNode", this->getNodeMetaType(), scale, this, position);
+	//mergedNode->setColor(osg::Vec4(0, 0, 1, 1));
 
 	QList<qlonglong> connectedNodes;
 
-	QLinkedList<osg::ref_ptr<Data::Node> >::const_iterator iAdd = selectedNodes->constBegin();
+	QLinkedList<Data::Node* >::const_iterator iAdd = selectedNodes->constBegin();
 
 	//pridavame do zluceneho uzla zlucovane uzly
 	while (iAdd != selectedNodes->constEnd()) 
 	{
 		(*iAdd)->setCurrentPosition(mergedNode->getCurrentPosition());
 		(*iAdd)->setFixed(false);
-		(*iAdd)->setNodeMask(0);
+		//(*iAdd)->setNodeMask(0);
 
 		Data::Edge * e = this->addEdge("mergedEdge", (*iAdd), mergedNode, this->getEdgeMetaType(), true);
 		e->setScale(0);
@@ -398,16 +309,16 @@ osg::ref_ptr<Data::Node> Data::Graph::mergeNodes(QLinkedList<osg::ref_ptr<Data::
 	}
 
 	//spajame povodne uzly s novovytvorenym zlucenym uzlom
-	QLinkedList<osg::ref_ptr<Data::Node> >::const_iterator i = selectedNodes->constBegin();
+	QLinkedList<Data::Node* >::const_iterator i = selectedNodes->constBegin();
 	while (i != selectedNodes->constEnd()) 
 	{
-		QMap< qlonglong,osg::ref_ptr<Data::Edge> >::const_iterator iedge = (*i)->getEdges()->constBegin();
+		QMap< qlonglong,Data::Edge* >::const_iterator iedge = (*i)->getEdges()->constBegin();
 		while (iedge != (*i)->getEdges()->constEnd()) 
 		{
-			iedge.value().get()->setScale(0);
-			osg::ref_ptr<Data::Node> srcNode = iedge.value().get()->getSrcNode();
-			osg::ref_ptr<Data::Node> dstNode = iedge.value().get()->getDstNode();
-			osg::ref_ptr<Data::Node> connectNode;
+			iedge.value()->setScale(0);
+			Data::Node* srcNode = iedge.value()->getSrcNode();
+			Data::Node* dstNode = iedge.value()->getDstNode();
+			Data::Node* connectNode;
 
 			if (dstNode->getId() == (*i)->getId()) {
 				connectNode = srcNode;
@@ -416,11 +327,11 @@ osg::ref_ptr<Data::Node> Data::Graph::mergeNodes(QLinkedList<osg::ref_ptr<Data::
 				connectNode = dstNode;
 			}
 
-			if(!connectedNodes.contains(connectNode->getId()) && connectNode->getNodeMask() != 0)
+			/*if(!connectedNodes.contains(connectNode->getId()) && connectNode->getNodeMask() != 0)
 			{
 				Data::Edge * newEdgeSrc = this->addEdge("mergedEdge", connectNode, mergedNode, this->getEdgeMetaType(), true);
 				connectedNodes << connectNode->getId();
-			}
+			}*/
 
 			++iedge;
 		}
@@ -435,9 +346,9 @@ osg::ref_ptr<Data::Node> Data::Graph::mergeNodes(QLinkedList<osg::ref_ptr<Data::
 	return mergedNode;
 }
 
-void Data::Graph::separateNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes)
+void Data::Graph::separateNodes(QLinkedList<Data::Node* > * selectedNodes)
 {
-	QLinkedList<osg::ref_ptr<Data::Node> >::const_iterator i = selectedNodes->constBegin();
+	QLinkedList<Data::Node* >::const_iterator i = selectedNodes->constBegin();
 
 	//zo zluceneho uzla extrahujeme v nom zahrnute uzly
 	while (i != selectedNodes->constEnd()) 
@@ -450,29 +361,29 @@ void Data::Graph::separateNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selecte
 			//nastavime poziciu na mergeNode a zrusime tento uzol
 			osg::Vec3f position = (*i)->getCurrentPosition();
 
-			QMap< qlonglong,osg::ref_ptr<Data::Edge> >::const_iterator iedge = (*i)->getEdges()->constBegin();
+			QMap< qlonglong,Data::Edge* >::const_iterator iedge = (*i)->getEdges()->constBegin();
 			while (iedge != (*i)->getEdges()->constEnd()) 
 			{
-				osg::ref_ptr<Data::Node> connectedNode;
+				Data::Node* connectedNode;
 				float scale = this->getEdgeScale();
 
 				//mergedEdge ide vzdy z povodneho nodu do mergedNodu
-				connectedNode = iedge.value().get()->getSrcNode();
+				connectedNode = iedge.value()->getSrcNode();
 
 				//ak je node zamaskovany, tak ho odmaskujeme
-				if(connectedNode->getNodeMask() == 0)
+				/*if(connectedNode->getNodeMask() == 0)
 				{
 					connectedNode->setCurrentPosition(position);
 					connectedNode->setFixed(false);
 					connectedNode->setNodeMask(~0);
 
-					QMap< qlonglong,osg::ref_ptr<Data::Edge> >::const_iterator iedgeIn = connectedNode->getEdges()->constBegin();
+					QMap< qlonglong,Data::Edge* >::const_iterator iedgeIn = connectedNode->getEdges()->constBegin();
 
 					//nastavujeme velkost hranam
 					while (iedgeIn != connectedNode->getEdges()->constEnd()) 
 					{
-						osg::ref_ptr<Data::Node> srcNode = iedgeIn.value().get()->getSrcNode();
-						osg::ref_ptr<Data::Node> dstNode = iedgeIn.value().get()->getDstNode();
+						Data::Node* srcNode = iedgeIn.value().get()->getSrcNode();
+						Data::Node* dstNode = iedgeIn.value().get()->getDstNode();
 
 						if(iedgeIn.value().get()->getScale() == 0 && (srcNode->getNodeMask() != 0 && dstNode->getNodeMask() != 0))
 						{
@@ -482,10 +393,10 @@ void Data::Graph::separateNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selecte
 
 						++iedgeIn;
 					}
-				}
+				}*/
 
 				//TODO - nastavime velkost hranam - vsetkym default - treba prerobit ak budu mat hrany inu velkost
-				iedge.value().get()->setScale(scale);
+				iedge.value()->setScale(scale);
 
 				++iedge;
 			}
@@ -503,12 +414,12 @@ void Data::Graph::addNestedNode(Data::Node * node)
 	if(this->parent_id.count()>0)
 	{
 		//pridame vnoerny uzol do posledneho nacitaneho uzla len pri importe
-		node->setParentNode(this->parent_id.last());
+		//node->setParentNode(this->parent_id.last());
 	}
 }
 
 
-void Data::Graph::createNestedGraph(osg::ref_ptr<Data::Node> srcNode)
+void Data::Graph::createNestedGraph(Data::Node* srcNode)
 {
 	//vytvorime vnoreny graf do posledneho nacitaneho uzla pri importe
 	this->parent_id.append(srcNode);
@@ -520,16 +431,16 @@ void Data::Graph::createNestedGraph(osg::ref_ptr<Data::Node> srcNode)
 void Data::Graph::closeNestedGraph()
 {
 	//ukoncime vytvaranie daneho vnoreneho grafu pri importe
-	QSharedPointer<Layout::ShapeGetter> shapeGetter (
+	/*QSharedPointer<Layout::ShapeGetter> shapeGetter (
 		new Layout::ShapeGetter_Sphere_AroundNode (
 			this->parent_id.last(),
 			getNodeScale()*4,
 			Layout::Shape_Sphere::RANDOM_DISTANCE_FROM_CENTER,
 			Layout::ShapeGetter_Sphere_AroundNode::NODE_CURRENT_POSITION
 		)
-	);
+	);*/
 	//nastavime obmedzovac pre zobrazenie vnoreneho grafu
-	restrictionsManager_.setRestrictions (this->nestetSubGraphs.last(), shapeGetter);
+	//restrictionsManager_.setRestrictions (this->nestetSubGraphs.last(), shapeGetter);
 
 	this->nestedNodes.clear();
 	this->nestetSubGraphs.removeLast();
@@ -546,7 +457,7 @@ bool Data::Graph::isNestedGraph()
 	return true;
 }
 
-osg::ref_ptr<Data::Edge> Data::Graph::addEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented) 
+Data::Edge* Data::Graph::addEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented) 
 {
 	if(isParralel(srcNode, dstNode))
 	{
@@ -562,7 +473,7 @@ osg::ref_ptr<Data::Edge> Data::Graph::addEdge(QString name, osg::ref_ptr<Data::N
 			type = getNestedEdgeType();
 		}
 		float scale = this->getEdgeScale();
-		osg::ref_ptr<Data::Edge> edge = new Data::Edge(this->incEleIdCounter(), name, this, srcNode, dstNode, type, isOriented, getEdgeScale());
+		Data::Edge* edge = new Data::Edge(this->incEleIdCounter(), name, this, srcNode, dstNode, type, isOriented, getEdgeScale());
 
 		edge->linkNodes(&this->newEdges);
 		if((type!=NULL && type->isMeta()) || ((srcNode->getType()!=NULL && srcNode->getType()->isMeta()) || (dstNode->getType()!=NULL && dstNode->getType()->isMeta())))
@@ -580,7 +491,7 @@ osg::ref_ptr<Data::Edge> Data::Graph::addEdge(QString name, osg::ref_ptr<Data::N
     return NULL;
 }
 
-osg::ref_ptr<Data::Edge> Data::Graph::addEdge(qlonglong id, QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented) 
+Data::Edge* Data::Graph::addEdge(qlonglong id, QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented) 
 {
 	if(isParralel(srcNode, dstNode))
 	{
@@ -591,7 +502,7 @@ osg::ref_ptr<Data::Edge> Data::Graph::addEdge(qlonglong id, QString name, osg::r
 	{
 		//pridame hranu do grafu
 
-		osg::ref_ptr<Data::Edge> edge = new Data::Edge(id, name, this, srcNode, dstNode, type, isOriented, getEdgeScale());
+		Data::Edge* edge = new Data::Edge(id, name, this, srcNode, dstNode, type, isOriented, getEdgeScale());
 
 		edge->linkNodes(&this->newEdges);
 		if((type!=NULL && type->isMeta()) || ((srcNode->getType()!=NULL && srcNode->getType()->isMeta()) || (dstNode->getType()!=NULL && dstNode->getType()->isMeta())))
@@ -624,7 +535,7 @@ Data::Type* Data::Graph::getNestedEdgeType()
 				QMap<QString, QString> *settings = new QMap<QString, QString>;
 
 				settings->insert("scale", "50");//this->getEdgeScale());
-				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
+				//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
 				settings->insert("color.R", "1");
 				settings->insert("color.G", "0");
 				settings->insert("color.B", "0");
@@ -653,7 +564,7 @@ Data::Type* Data::Graph::getNestedMetaEdgeType()
 				QMap<QString, QString> *settings = new QMap<QString, QString>;
 
 				settings->insert("scale", "Viewer.Textures.EdgeScale");
-				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
+				//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
 				settings->insert("color.R", "0");
 				settings->insert("color.G", "1");
 				settings->insert("color.B", "0");
@@ -668,7 +579,7 @@ Data::Type* Data::Graph::getNestedMetaEdgeType()
 			return metype;
 }
 
-void Data::Graph::addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, osg::ref_ptr<Data::Edge> replacedSingleEdge)
+void Data::Graph::addMultiEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, Data::Edge* replacedSingleEdge)
 {
 	Data::Type* mtype;
 
@@ -684,7 +595,7 @@ void Data::Graph::addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, o
 				QMap<QString, QString> *settings = new QMap<QString, QString>;
 
 				settings->insert("scale", "20");
-				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
+				//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
 				settings->insert("color.R", "1");
 				settings->insert("color.G", "1");
 				settings->insert("color.B", "1");
@@ -705,7 +616,7 @@ void Data::Graph::addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, o
 				QMap<QString, QString> *settings = new QMap<QString, QString>;
 
 				settings->insert("scale", "Viewer.Textures.EdgeScale");
-				settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
+				//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Edge"));
 				settings->insert("color.R", "1");
 				settings->insert("color.G", "1");
 				settings->insert("color.B", "1");
@@ -719,19 +630,19 @@ void Data::Graph::addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, o
 			}
 
 			//pridame multiranu tvorenu pomocnymi hranami a pomocnym uzlom
-			osg::ref_ptr<Data::Node> parallelNode = addNode("PNode", mtype);
+			Data::Node* parallelNode = addNode("PNode", mtype);
 
 			if(this->parent_id.count()>0)
 			{
 				metype = getNestedEdgeType();
 			}
 
-			osg::ref_ptr<Data::Edge> edge1 = new Data::Edge(this->incEleIdCounter(), name, this, srcNode, parallelNode, metype, isOriented, this->getEdgeScale());
+			Data::Edge* edge1 = new Data::Edge(this->incEleIdCounter(), name, this, srcNode, parallelNode, metype, isOriented, this->getEdgeScale());
 			edge1->linkNodes(this->edges);
 
 			this->edgesByType.insert(type->getId(),edge1);
 
-			osg::ref_ptr<Data::Edge> edge2 = new Data::Edge(this->incEleIdCounter(), name, this, parallelNode, dstNode, metype, isOriented, this->getEdgeScale());
+			Data::Edge* edge2 = new Data::Edge(this->incEleIdCounter(), name, this, parallelNode, dstNode, metype, isOriented, this->getEdgeScale());
 			edge2->linkNodes(this->edges);
 
 			this->edgesByType.insert(type->getId(),edge2);
@@ -742,10 +653,10 @@ void Data::Graph::addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, o
 			}
 }
 
-osg::ref_ptr<Data::Node> Data::Graph::getMultiEdgeNeighbour(osg::ref_ptr<Data::Edge> multiEdge)
+Data::Node* Data::Graph::getMultiEdgeNeighbour(Data::Edge* multiEdge)
 {
 	//zistujeme uzly pospajane multihranou
-	osg::ref_ptr<Data::Node> multiNode = NULL;
+	Data::Node* multiNode = NULL;
 
 	if(multiEdge->getSrcNode()->getType()->getName()=="multiNode")
 		multiNode = multiEdge->getSrcNode();
@@ -754,7 +665,7 @@ osg::ref_ptr<Data::Node> Data::Graph::getMultiEdgeNeighbour(osg::ref_ptr<Data::E
 	if(multiNode == NULL)
 		return NULL;
 
-	QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator i = multiNode->getEdges()->begin();
+	QMap<qlonglong, Data::Edge* >::iterator i = multiNode->getEdges()->begin();
 
 	//prechadzame uzly pospajane multihranou
 		while (i != multiNode->getEdges()->end())
@@ -776,7 +687,7 @@ osg::ref_ptr<Data::Node> Data::Graph::getMultiEdgeNeighbour(osg::ref_ptr<Data::E
 	return NULL;
 }
 
-osg::ref_ptr<Data::Node> Data::Graph::addHyperEdge(QString name, osg::Vec3f position) {
+Data::Node* Data::Graph::addHyperEdge(QString name, osg::Vec3f position) {
 	Data::Type* mtype;
 
 	//pridavame hyper hranu
@@ -789,7 +700,7 @@ osg::ref_ptr<Data::Node> Data::Graph::addHyperEdge(QString name, osg::Vec3f posi
 		QMap<QString, QString> *settings = new QMap<QString, QString>;
 
 		settings->insert("scale", "5");
-		settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
+		//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.Node"));
 		settings->insert("color.R", "1");
 		settings->insert("color.G", "1");
 		settings->insert("color.B", "1");
@@ -805,10 +716,10 @@ osg::ref_ptr<Data::Node> Data::Graph::addHyperEdge(QString name, osg::Vec3f posi
 	return addNode (name, mtype, position);
 }
 
-bool Data::Graph::isParralel(osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode)
+bool Data::Graph::isParralel(Data::Node* srcNode, Data::Node* dstNode)
 {
 	//zistujeme ci dva uzly su spojene viacerymi hranami
-	QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator i = srcNode->getEdges()->begin();
+	QMap<qlonglong, Data::Edge* >::iterator i = srcNode->getEdges()->begin();
 	bool isMulti = false;
 
 	//prechadzame hranami vychadzajucimi z daneho uzla, zistujeme kolko z nich spaja druhy uzol
@@ -824,7 +735,7 @@ bool Data::Graph::isParralel(osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data
 			}
 			else 
 			{
-				osg::ref_ptr<Data::Node> neghbourNode = getMultiEdgeNeighbour((*i));
+				Data::Node* neghbourNode = getMultiEdgeNeighbour((*i));
 				if(neghbourNode!= NULL && (neghbourNode->getId() == (*i)->getSrcNode()->getId() || neghbourNode->getId() == (*i)->getDstNode()->getId()))
 				{
 					isMulti= true;
@@ -896,7 +807,7 @@ qlonglong Data::Graph::getMaxEleIdFromElements()
     qlonglong max = 0;
 
     if(this->nodes!=NULL && !this->nodes->isEmpty()) {
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator iNodes =  this->nodes->end();
+        QMap<qlonglong, Data::Node* >::iterator iNodes =  this->nodes->end();
         iNodes--;
 
         if(iNodes.key()>max) max = iNodes.key();
@@ -910,21 +821,21 @@ qlonglong Data::Graph::getMaxEleIdFromElements()
     }
     
     if(this->nodes!=NULL && !this->edges->isEmpty()) {
-        QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator iEdges =  this->edges->end();
+        QMap<qlonglong, Data::Edge* >::iterator iEdges =  this->edges->end();
         iEdges--;
 
         if(iEdges.key()>max) max = iEdges.key();
     }
     
     if(this->nodes!=NULL && !this->metaNodes->isEmpty()) {
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator iMetaNodes =  this->metaNodes->end();
+        QMap<qlonglong, Data::Node* >::iterator iMetaNodes =  this->metaNodes->end();
         iMetaNodes--;
 
         if(iMetaNodes.key()>max) max = iMetaNodes.key();
     }    
     
     if(this->nodes!=NULL && !this->metaEdges->isEmpty()) {
-        QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator iMetaEdges =  this->metaEdges->end();
+        QMap<qlonglong, Data::Edge* >::iterator iMetaEdges =  this->metaEdges->end();
         iMetaEdges--;
 
         if(iMetaEdges.key()>max) max = iMetaEdges.key();
@@ -954,8 +865,8 @@ Data::Type* Data::Graph::getNodeMetaType()
 	{
 		QMap<QString, QString> *settings = new QMap<QString, QString>;
 
-		settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
-		settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
+		//settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
+		//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
 		settings->insert("color.R", "0.8");
 		settings->insert("color.G", "0.1");
 		settings->insert("color.B", "0.1");
@@ -976,8 +887,8 @@ Data::Type* Data::Graph::getNodeMultiType()
 	//vraciame typ multi uzla s nastavenymi hodnotami
 		QMap<QString, QString> *settings = new QMap<QString, QString>;
 
-		settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
-		settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
+		//settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
+		//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
 		settings->insert("color.R", "0.8");
 		settings->insert("color.G", "0.1");
 		settings->insert("color.B", "0.1");
@@ -993,7 +904,7 @@ float Data::Graph::getNodeScale()
 	//vraciame skalu grafu potrebnu pre vnorene grafy
 	int level;
 	level = this->parent_id.size();
-	float offset = Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale").toFloat();
+	float offset = 0; //Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale").toFloat();
 
 	for(int i=0; i<level; i++)
 	{
@@ -1008,7 +919,7 @@ float Data::Graph::getEdgeScale()
 	//vraciame skalu grafu potrebnu pre vnorene grafy
 	int level;
 	level = this->parent_id.size();
-	float offset = Util::ApplicationConfig::get()->getValue("Viewer.Textures.EdgeScale").toFloat();
+	float offset = 0; //Util::ApplicationConfig::get()->getValue("Viewer.Textures.EdgeScale").toFloat();
 
 	for(int i=0; i<level; i++)
 	{
@@ -1043,8 +954,8 @@ Data::Type* Data::Graph::getRestrictionNodeMetaType()
 	{
 		QMap<QString, QString> *settings = new QMap<QString, QString>;
 
-		settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
-		settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
+		//settings->insert("scale", Util::ApplicationConfig::get()->getValue("Viewer.Textures.DefaultNodeScale"));
+		//settings->insert("textureFile", Util::ApplicationConfig::get()->getValue("Viewer.Textures.MetaNode"));
 		settings->insert("color.R", "0");
 		settings->insert("color.G", "1");
 		settings->insert("color.B", "1");
@@ -1063,7 +974,7 @@ Data::Type* Data::Graph::getRestrictionNodeMetaType()
 void Data::Graph::removeType( Data::Type* type )
 {
 	//odstranujeme typ
-    if(type!=NULL && type->getGraph()==this) {
+    /*if(type!=NULL && type->getGraph()==this) {
         if(!type->isInDB() || Model::TypeDAO::removeType(type, this->conn)) {
             this->types->remove(type->getId());
             this->newTypes.remove(type->getId());
@@ -1084,13 +995,13 @@ void Data::Graph::removeType( Data::Type* type )
             //vymazeme vsetky uzly daneho typu
             this->removeAllNodesOfType(type);
         }
-    }
+    }*/
 }
 
 void Data::Graph::removeAllEdgesOfType(Data::Type* type )
 {
 	//ostranujeme vsetky hrany nejakeho typu
-	QList<osg::ref_ptr<Data::Edge> > edgesToKill;
+	QList<Data::Edge* > edgesToKill;
 	if(type->isMeta()) edgesToKill = this->metaEdgesByType.values(type->getId());
 	else edgesToKill = this->edgesByType.values(type->getId());
     if(!edgesToKill.isEmpty()) {
@@ -1105,7 +1016,7 @@ void Data::Graph::removeAllEdgesOfType(Data::Type* type )
 void Data::Graph::removeAllNodesOfType( Data::Type* type )
 {
 	//odstranujeme vsetky uzly nejakeho typu
-	QList<osg::ref_ptr<Data::Node> > nodesToKill;
+	QList<Data::Node* > nodesToKill;
 	if(type->isMeta()) nodesToKill = this->metaNodesByType.values(type->getId()); //vyberieme vsetky uzly daneho typu
 	else nodesToKill = this->nodesByType.values(type->getId());
 
@@ -1118,10 +1029,10 @@ void Data::Graph::removeAllNodesOfType( Data::Type* type )
     }
 }
 
-void Data::Graph::removeEdge( osg::ref_ptr<Data::Edge> edge)
+void Data::Graph::removeEdge( Data::Edge* edge)
 {
 	//odstranenie danej hrany vratane relevantnych zoznamov
-	if(edge!=NULL && edge->getGraph()==this) {
+	/*if(edge!=NULL && edge->getGraph()==this) {
 		if(!edge->isInDB() || Model::EdgeDAO::removeEdge(edge, this->conn)) {
 			this->edges->remove(edge->getId());
 			this->metaEdges->remove(edge->getId());
@@ -1131,14 +1042,14 @@ void Data::Graph::removeEdge( osg::ref_ptr<Data::Edge> edge)
 
 			edge->unlinkNodes();
 		}
-	}
+	}*/
 }
 
-void Data::Graph::removeNode( osg::ref_ptr<Data::Node> node )
+void Data::Graph::removeNode( Data::Node* node )
 {
 	//odstranenie uzla vratane relevantnych zoznamov
 	if(node!=NULL && node->getGraph()==this) {
-		if(!node->isInDB() || Model::NodeDAO::removeNode(node, this->conn)) {
+		/*if(!node->isInDB() || Model::NodeDAO::removeNode(node, this->conn)) {
 
 			// remove restrictions:
 			{
@@ -1162,21 +1073,20 @@ void Data::Graph::removeNode( osg::ref_ptr<Data::Node> node )
 			if(this->types->contains(node->getId())) {
 				this->removeType(this->types->value(node->getId()));
 			}
-		}
+		}*/
 	}
 }
 
-Layout::RestrictionsManager & Data::Graph::getRestrictionsManager (void) {
+/*Layout::RestrictionsManager & Data::Graph::getRestrictionsManager (void) {
 	return restrictionsManager_;
-}
+}*/
 
-osg::ref_ptr<Data::Node> Data::Graph::addRestrictionNode(QString name, osg::Vec3f position) {
+Data::Node* Data::Graph::addRestrictionNode(QString name, osg::Vec3f position) {
 	//pridame obmedzovac reprezentovany uzlom
-	osg::ref_ptr<Data::Node> node = addNode (name, getRestrictionNodeMetaType (), position);
+	Data::Node* node = addNode (name, getRestrictionNodeMetaType (), position);
 	node->setIgnored (true);
 	node->setPositionCanBeRestricted (false);
 	node->setRemovableByUser (false);
 
 	return node;
 }
-

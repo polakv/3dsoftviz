@@ -16,15 +16,6 @@
 #include <QString>
 #include <QTextStream>
 
-#include <osg/Geode>
-#include <osg/Geometry>
-#include <osg/BlendFunc>
-#include <osg/Depth>
-#include <osg/CullFace>
-#include <osgText/Text>
-
-#include <osg/AutoTransform>
-
 namespace Data
 {
 	class Edge;
@@ -38,7 +29,7 @@ namespace Data
 	*  \author Aurel Paulovic, Michal Paprcka
 	*  \date 29. 4. 2010
 	*/
-	class Node : public osg::Geode
+	class Node
 	{
 	public:
 
@@ -187,25 +178,25 @@ namespace Data
 		/**
 		*  \fn inline public constant  getEdges
 		*  \brief Returns all Edges connected to the Node
-		*  \return QMap<qlonglong,osg::ref_ptr<Data::Edge> > * Edges connected to the Node
+		*  \return QMap<qlonglong,Data::Edge* > * Edges connected to the Node
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> > * getEdges() const { return edges; }
+		QMap<qlonglong, Data::Edge* > * getEdges() { return edges; }
 
 		/**
-		*  \fn inline public  setEdges(QMap<qlonglong, osg::ref_ptr<Data::Edge> > *val)
+		*  \fn inline public  setEdges(QMap<qlonglong, Data::Edge* > *val)
 		*  \brief Sets (overrides) new Edges which are connected to the Node
 		*  \param   val   new Edges
 		*/
-		void setEdges(QMap<qlonglong, osg::ref_ptr<Data::Edge> > *val) { edges = val; }
+		void setEdges(QMap<qlonglong, Data::Edge* > *val) { edges = val; }
 
 
 		/**
-		*  \fn public  addEdge(osg::ref_ptr<Data::Edge> edge)
+		*  \fn public  addEdge(Data::Edge* edge)
 		*  \brief Adds new Edge to the Node
 		*  \param    edge   new Edge
 		*/
-		void addEdge(osg::ref_ptr<Data::Edge> edge);
-		void removeEdge(osg::ref_ptr<Data::Edge> edge);
+		void addEdge(Data::Edge* edge);
+		void removeEdge(Data::Edge* edge);
         
 
 		/**
@@ -234,8 +225,7 @@ namespace Data
 		*  \brief Sets nodes force to zero value.
 		*/
 		void resetForce() { force = osg::Vec3f(0,0,0); }
-
-
+		
 		/**
 		*  \fn inline public  setFixed(bool fixed) 
 		*  \brief Sets node fixed state
@@ -245,10 +235,10 @@ namespace Data
 		{ 
 			this->fixed = fixed; 
 
-			if (fixed && !this->containsDrawable(square))
+			/*if (fixed && !this->containsDrawable(square))
 				this->addDrawable(square);
 			else if (!fixed)
-				this->removeDrawable(square);
+				this->removeDrawable(square);*/
 		}
 
 		/**
@@ -257,7 +247,6 @@ namespace Data
 		*  \return bool true, if the Node is fixed
 		*/
 		bool isFixed() const { return fixed; }
-		
 		/**
 		*  \fn inline public  setSelected(bool selected) 
 		*  \brief Sets node picked state
@@ -265,10 +254,10 @@ namespace Data
 		*/
 		void setSelected(bool selected) 
 		{ 
-			if (selected)
-				setDrawableColor(0, osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
-			else
-				setDrawableColor(0, color);
+			//if (selected)
+				//setDrawableColor(0, osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f));
+			//else
+				//setDrawableColor(0, color);
 
 			this->selected = selected; 
 		}
@@ -363,13 +352,13 @@ namespace Data
 		*  \brief Sets default node color
 		*  \param     color   default color
 		*/
-		void setColor(osg::Vec4 color) 
+		/*void setColor(osg::Vec4 color) 
 		{
 			this->color = color;
 
 			if (!selected)
 				setDrawableColor(0, color);
-		}
+		}*/
 
 
 		/**
@@ -410,26 +399,6 @@ namespace Data
 		bool isUsingInterpolation() const { return usingInterpolation; }
 
 		/**
-		*  \fn inline public  setUsingInterpolation(bool val)
-		*  \brief Sets if the Node is using interpolation or not
-		*  \param      val     
-		*/
-		void setUsingInterpolation(bool val) { usingInterpolation = val; }
-
-		void setParentBall(osg::Sphere * val) { parentBall = val; }
-
-		osg::Sphere * getParentBall() { return parentBall; }
-
-		void setBall(osg::Geode * val) { ball = val; }
-
-		osg::Geode * getBall() { return ball; }
-
-		osg::ref_ptr<osg::AutoTransform> getOutBall() { return outBall; }
-
-		void setOutBall(osg::ref_ptr<osg::AutoTransform> val) { outBall = val; }
-
-
-		/**
 		*  \fn public  reloadConfig
 		*  \brief Reloads node configuration
 		*/
@@ -440,14 +409,14 @@ namespace Data
 		*  \brief Sets parent of note, if null, node has no parent
 		*  \param      val     
 		*/
-		void setNestedParent(osg::ref_ptr<Data::Node> val) { nested_parent = val; }
+		void setNestedParent(Data::Node* val) { nested_parent = val; }
 
 		/**
 		*  \fn inline public  getNestedParent
 		*  \brief Return node parent, if no parent then return NULL
 	        *  \return QString name of the Node
 		*/
-		osg::ref_ptr<Data::Node> getNestedParent() { return nested_parent; }
+		Data::Node* getNestedParent() { return nested_parent; }
 
 		/**
 		*  \fn inline public  getName
@@ -494,7 +463,7 @@ namespace Data
 		*	Node parent
 		*	\brief parent node of current node in nested graphs, in top level graph is null
 		*/
-		osg::ref_ptr<Data::Node> nested_parent;
+		Data::Node* nested_parent;
 
 		/**
 		*  QString name
@@ -527,20 +496,10 @@ namespace Data
 		osg::Vec3f currentPosition;
 
 		/**
-		*  osg::Sphere nested ball
-		*  \brief
-		*/
-		osg::Sphere * parentBall;
-
-		osg::Geode * ball;
-
-		osg::ref_ptr<osg::AutoTransform> outBall;
-
-		/**
-		*  QMap<qlonglong, osg::ref_ptr<Data::Edge> > * edges
+		*  QMap<qlonglong, Data::Edge* > * edges
 		*  \brief Edges connected to the Node
 		*/
-        QMap<qlonglong, osg::ref_ptr<Data::Edge> > * edges;
+        QMap<qlonglong, Data::Edge* > * edges;
 		
 
 		/**

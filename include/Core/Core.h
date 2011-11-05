@@ -9,13 +9,9 @@
 #include <QString>
 #include <QApplication>
 
-#include "Model/DB.h"
 #include "Data/Graph.h"
 #include "Layout/FRAlgorithm.h"
 #include "Layout/LayoutThread.h"
-#include "QOSG/CoreWindow.h"
-#include "Viewer/CoreGraph.h"
-#include "QOSG/MessageWindows.h"
 
 namespace QOSG
 {
@@ -58,12 +54,6 @@ namespace AppCore
         static Core* getInstance(QApplication * app = 0);
 
         /**
-         * QOSG::MessageWindows * messageWindows;
-         * \brief Provides functionality to show information or error popup windows and progress bar.
-         */
-        QOSG::MessageWindows * messageWindows;
-
-        /**
          * Layout::LayoutThread * thr
          * \brief Thread of Layout algorithm.
          */
@@ -88,12 +78,6 @@ namespace AppCore
         */
         Layout::FRAlgorithm * alg;
 
-
-        /**
-        *  Vwr::CoreGraph * cg
-        *  \brief instance of CoreGraph
-        */
-        Vwr::CoreGraph * cg;
 
         /**
         *  Core * core;

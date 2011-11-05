@@ -1,7 +1,6 @@
 #include "Layout/FRAlgorithm.h"
 
 using namespace Layout;
-using namespace Vwr;	
 
 
 
@@ -66,11 +65,11 @@ void FRAlgorithm::SetParameters(float sizeFactor,float flexibility,int animation
 	if(this->graph != NULL)
 	{
 		K = computeCalm();
-		graph->setFrozen(false);
+		//graph->setFrozen(false);
 	}
 	else
 	{
-		cout << "Nenastaveny graf. Pouzi metodu SetGraph(Data::Graph graph).";
+		//cout << "Nenastaveny graf. Pouzi metodu SetGraph(Data::Graph graph).";
 	}
 }
 
@@ -83,18 +82,18 @@ double FRAlgorithm::computeCalm() {
 /* Rozmiestni uzly na nahodne pozicie */
 void FRAlgorithm::Randomize() 
 {
-    QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
+    QMap<qlonglong, Data::Node* >::iterator j;
 	j = graph->getNodes()->begin();
 
 	for (int i = 0; i < graph->getNodes()->count(); i++,++j)
 	{		
-		if(!j.value()->isFixed())
-		{
+		//if(!j.value()->isFixed())
+		//{
 			osg::Vec3f randPos = getRandomLocation();
 			j.value()->setTargetPosition(randPos);
-		}
+		//}
 	}	
-	graph->setFrozen(false);
+	//graph->setFrozen(false);
 }
 
 osg::Vec3f FRAlgorithm::getRandomLocation() 
@@ -121,10 +120,10 @@ void FRAlgorithm::PauseAlg()
 
 void FRAlgorithm::WakeUpAlg() 
 {
-	if(graph != NULL && state == RUNNING && graph->isFrozen())
+/*	if(graph != NULL && state == RUNNING && graph->isFrozen())
 	{
 		graph->setFrozen(false);
-	}
+	}*/
 }
 
 void FRAlgorithm::RunAlg()
@@ -156,15 +155,15 @@ void FRAlgorithm::Run()
 		{			
 			// slucka pozastavenia - ak je pauza
 			// alebo je graf zmrazeny (spravidla pocas editacie)
-			while (notEnd && (state != RUNNING || graph->isFrozen()))
-			{
+			//while (notEnd && (state != RUNNING || graph->isFrozen()))
+			//{
 				// [GrafIT][!] not 100% OK (e.g. msleep(100) remains here), but we have fixed the most obvious multithreading issues of the original code
 				isIterating_mutex.unlock();
 				QThread::msleep(100);
 				isIterating_mutex.lock();
-			}
+			//}
 			if (!iterate()) {
-				graph->setFrozen(true);
+				//graph->setFrozen(true);
 			}			
 		}
 
@@ -172,7 +171,7 @@ void FRAlgorithm::Run()
 	}
 	else
 	{
-		cout << "Nenastaveny graf. Pouzi metodu SetGraph(Data::Graph graph).";
+		//cout << "Nenastaveny graf. Pouzi metodu SetGraph(Data::Graph graph).";
 
 	}
 }
@@ -181,7 +180,7 @@ bool FRAlgorithm::iterate()
 {	
 	bool changed = false;  		
 	{			
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
+        QMap<qlonglong, Data::Node* >::iterator j;
 		j = graph->getNodes()->begin();
 		for (int i = 0; i < graph->getNodes()->count(); i++,++j)
 		{ // pre vsetky uzly..
@@ -191,8 +190,8 @@ bool FRAlgorithm::iterate()
 	}
 	{//meta uzly
 		
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator k;	
+		QMap<qlonglong, Data::Node* >::iterator j;
+		QMap<qlonglong, Data::Node* >::iterator k;	
 		j = graph->getMetaNodes()->begin();
 		for (int i = 0; i < graph->getMetaNodes()->count(); i++,++j)
 		{ // pre vsetky metauzly..
@@ -210,7 +209,7 @@ bool FRAlgorithm::iterate()
 	}
 	{//meta hrany
 		
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator j;
+		QMap<qlonglong, Data::Edge* >::iterator j;
 		j = graph->getMetaEdges()->begin();
 		for (int i = 0; i < graph->getMetaEdges()->count(); i++,++j)
 		{ // pre vsetky metahrany..
@@ -234,8 +233,8 @@ bool FRAlgorithm::iterate()
 		}
 	}
 	{//uzly
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator k;
+        QMap<qlonglong, Data::Node* >::iterator j;
+        QMap<qlonglong, Data::Node* >::iterator k;
 		j = graph->getNodes()->begin();
 		for (int i = 0; i < graph->getNodes()->count(); i++,++j) 
 		{ // pre vsetky uzly..
@@ -249,7 +248,7 @@ bool FRAlgorithm::iterate()
 		}
 	}
 	{//hrany
-        QMap<qlonglong, osg::ref_ptr<Data::Edge> >::iterator j;
+        QMap<qlonglong, Data::Edge* >::iterator j;
 		j = graph->getEdges()->begin();
 		for (int i = 0; i < graph->getEdges()->count(); i++,++j)
 		{ // pre vsetky hrany..
@@ -264,7 +263,7 @@ bool FRAlgorithm::iterate()
 	
 	// aplikuj sily na uzly
 	{	
-        QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
+        QMap<qlonglong, Data::Node* >::iterator j;
 		j = graph->getNodes()->begin();
 		for (int i = 0; i < graph->getNodes()->count(); i++,++j)
 		{ // pre vsetky uzly..
@@ -281,7 +280,7 @@ bool FRAlgorithm::iterate()
 	}
 	// aplikuj sily na metauzly
 	{
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >::iterator j;
+		QMap<qlonglong, Data::Node* >::iterator j;
 		j = graph->getMetaNodes()->begin();
 		for (int i = 0; i < graph->getMetaNodes()->count(); i++,++j) 
 		{ // pre vsetky metauzly..
@@ -322,6 +321,9 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 		// [GrafIT]
 	}
 
+	/*
+		-------Toto nie je treba, je to len pripocitanie suradnic ktore ovplyvni obmedzovac---------
+
 	// [GrafIT][.] using restrictions
 	osg::Vec3f originalTargetPosition = node->getTargetPosition ();
 
@@ -337,6 +339,9 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 	// [GrafIT][.] if something has been changed is now determined  by the change of target position
 	return (restrictedTargetPosition != originalTargetPosition);
 	// [GrafIT]
+	*/
+
+	return false;
 }
 
 /* Pricitanie pritazlivych sil */

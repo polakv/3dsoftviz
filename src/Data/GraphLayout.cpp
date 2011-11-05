@@ -36,31 +36,6 @@ Data::GraphLayout::~GraphLayout(void)
     this->metaSettings = NULL;
 }
 
-QString Data::GraphLayout::setName(QString name)
-{
-	//nastavenie nazvu layoutu
-    QString newName = Model::GraphLayoutDAO::setName(name,this,this->conn);
-
-    if(newName!=NULL) {
-        this->name = newName;
-    }
-
-    return this->name;
-}
-
-qlonglong Data::GraphLayout::getGraphId()
-{
-	//vraciame ID prisluchajuceho grafu
-    return this->graph->getId();
-}
-
-QString Data::GraphLayout::toString() const
-{
-    QString str;
-    QTextStream(&str) << "GraphLayout: graph_id:" << graph->getId() << " layout_id:" << layout_id << " name:" << name;
-    return str;
-}
-
 bool Data::GraphLayout::loadMetaSettings()
 {
     //nacitanie z Databazy

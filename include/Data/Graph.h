@@ -13,11 +13,6 @@
 #include "Data/Edge.h"
 #include "Data/MetaType.h"
 #include "Data/GraphLayout.h"
-#include "Model/GraphDAO.h"
-#include "Model/GraphLayoutDAO.h"
-#include "Model/TypeDAO.h"
-#include "Model/NodeDAO.h"
-#include "Model/EdgeDAO.h"
 
 
 #include <QString>
@@ -27,7 +22,7 @@
 #include <QtSql>
 #include <QMutableMapIterator>
 
-#include "Layout/RestrictionsManager.h"
+//#include "Layout/RestrictionsManager.h"
 
 #define METASTRENGTH 1
 
@@ -55,7 +50,7 @@ namespace Data
     public:
         
 		/**
-		*  \fn public overloaded constructor  Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,osg::ref_ptr<Data::Node> > *nodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *edges,QMap<qlonglong,osg::ref_ptr<Data::Node> > *metaNodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *metaEdges, QMap<qlonglong,Data::Type*> *types)
+		*  \fn public overloaded constructor  Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,Data::Node* > *nodes, QMap<qlonglong,Data::Edge* > *edges,QMap<qlonglong,Data::Node* > *metaNodes, QMap<qlonglong,Data::Edge* > *metaEdges, QMap<qlonglong,Data::Type*> *types)
 		*  \brief Creates new Graph Object from provided nodes, edges, types, metaNodes and metaEdges
 		*
 		*	This constructor is obsolete, use Graph(qlonglong graph_id, QString name, qlonglong layout_id_counter, qlonglong ele_id_counter, QSqlDatabase* conn) instead
@@ -69,7 +64,7 @@ namespace Data
 		*  \param   metaEdges     provided metaEdges
 		*  \param   types   provided types
 		*/
-		Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,osg::ref_ptr<Data::Node> > *nodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *edges,QMap<qlonglong,osg::ref_ptr<Data::Node> > *metaNodes, QMap<qlonglong,osg::ref_ptr<Data::Edge> > *metaEdges, QMap<qlonglong,Data::Type*> *types);
+		Graph(qlonglong graph_id, QString name, QSqlDatabase* conn, QMap<qlonglong,Data::Node* > *nodes, QMap<qlonglong,Data::Edge* > *edges,QMap<qlonglong,Data::Node* > *metaNodes, QMap<qlonglong,Data::Edge* > *metaEdges, QMap<qlonglong,Data::Type*> *types);
     
 		/**
 		*  \fn public overloaded constructor  Graph(qlonglong graph_id, QString name, qlonglong layout_id_counter, qlonglong ele_id_counter, QSqlDatabase* conn)
@@ -215,7 +210,7 @@ namespace Data
 		*  \param   position     position of the Node
 		*  \return osg::ref_ptr the added Node
 		*/
-		osg::ref_ptr<Data::Node> addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
         
 		/**
 		*  \fn public  addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0))
@@ -226,29 +221,29 @@ namespace Data
 		*  \param   position     position of the Node
 		*  \return osg::ref_ptr the added Node
 		*/
-		osg::ref_ptr<Data::Node> addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
 
 		/**
-		*  \fn public  mergeNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes, osg::Vec3f position)
+		*  \fn public  mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position)
 		*  \brief Merge selected nodes to one (meta) node
 		*  \param   selectedNodes   selected nodes
 		*  \param   position     new position of the Nodes
 		*  \return osg::ref_ptr the created merged Node
 		*/
-		osg::ref_ptr<Data::Node> mergeNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes, osg::Vec3f position);
+		Data::Node* mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position);
 
 		/**
-		*  \fn public  separateNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes)
+		*  \fn public  separateNodes(QLinkedList<Data::Node* > * selectedNodes)
 		*  \brief Separate selected nodes from merged nodes
 		*  \param   selectedNodes   selected merged nodes
 		*/
-		void separateNodes(QLinkedList<osg::ref_ptr<Data::Node> > * selectedNodes);
+		void separateNodes(QLinkedList<Data::Node* > * selectedNodes);
 
 		/**
-		*  \fn public  createNestedGraph(osg::ref_ptr<Data::Node> srcNode)
+		*  \fn public  createNestedGraph(Data::Node* srcNode)
 		*  \brief creates nested graph where can be added nested nodes and edges
 		*/
-		void createNestedGraph(osg::ref_ptr<Data::Node> srcNode);
+		void createNestedGraph(Data::Node* srcNode);
 
 		/**
 		*  \fn public  closeNestedGraph()
@@ -266,7 +261,7 @@ namespace Data
 		bool isNestedGraph();
 
 		/**
-		*  \fn public  addEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented)
+		*  \fn public  addEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented)
 		*  \brief Creates new Edge and adds it to the Graph
 		*  \param   name     name of the Edge
 		*  \param   srcNode    starting Node of the Edge
@@ -275,10 +270,10 @@ namespace Data
 		*  \param   isOriented   true, if the Edge is oriented  
 		*  \return osg::ref_ptr the added Edge
 		*/
-		osg::ref_ptr<Data::Edge> addEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented); 
+		Data::Edge* addEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented); 
         
 		/**
-		*  \fn public  addEdge(qlonglong id, QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented)
+		*  \fn public  addEdge(qlonglong id, QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented)
 		*  \brief Creates new Edge and adds it to the Graph
 		*  \param   is     is of the Edge
 		*  \param   name     name of the Edge
@@ -288,7 +283,7 @@ namespace Data
 		*  \param   isOriented   true, if the Edge is oriented  
 		*  \return osg::ref_ptr the added Edge
 		*/
-		osg::ref_ptr<Data::Edge> addEdge(qlonglong id, QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented); 
+		Data::Edge* addEdge(qlonglong id, QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented); 
 		/**
 		*  \fn public getNestedEdgeType()
 		*  \return nested edge type
@@ -330,14 +325,14 @@ namespace Data
 		float getEdgeScale();
 
 		/**
-		*  \fn public  removeNode(osg::ref_ptr<Data::Node> node)
+		*  \fn public  removeNode(Data::Node* node)
 		*  \brief Removes a Node from the Graph
 		*  \param      node   the Node to be removed from the Graph
 		*/
-		void removeNode(osg::ref_ptr<Data::Node> node);
+		void removeNode(Data::Node* node);
 
 		/**
-		*  \fn public  isInSameGraph(osg::ref_ptr<Data::Node> nodeA, osg::ref_ptr<Data::Node> nodeB)
+		*  \fn public  isInSameGraph(Data::Node* nodeA, Data::Node* nodeB)
 		*  \brief recognize if nodes are in same graph
 		*  \param Nodes: nodeA, nodeB
 		*/
@@ -345,7 +340,7 @@ namespace Data
 
         
 		/**
-		*  \fn public  addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, osg::ref_ptr<Data::Edge> replacedSingleEdge)
+		*  \fn public  addMultiEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, Data::Edge* replacedSingleEdge)
 		*  \brief Adds an Edge of MultiEdge type to Graph
 		*  \param   name     name of the Edge
 		*  \param   srcNode    starting Node of the Edge
@@ -354,33 +349,33 @@ namespace Data
 		*  \param   isOriented   true, if the Edge is oriented  
 		*  \return osg::ref_ptr the added Edge
 		*/
-		void addMultiEdge(QString name, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, osg::ref_ptr<Data::Edge> replacedSingleEdge);
+		void addMultiEdge(QString name, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, Data::Edge* replacedSingleEdge);
 
 		/**
-		*  \fn public isParralel(osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode)
+		*  \fn public isParralel(Data::Node* srcNode, Data::Node* dstNode)
 		* brief tests if edge between srcNode and dstNode is MultiNode type
 		*  \param   srcNode    starting Node of the Edge
 		*  \param   dstNode     ending Node of the Edge
 		*  \return bool value, if edge is MultiType
 		*/
-		bool isParralel(osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode);
+		bool isParralel(Data::Node* srcNode, Data::Node* dstNode);
 
 		/**
-		*  \fn public getMultiEdgeNeighbour(osg::ref_ptr<Data::Edge> multiEdge)
+		*  \fn public getMultiEdgeNeighbour(Data::Edge* multiEdge)
 		* brief gets closer neighbour Node of non MultiNode type
 		*  \param   multiEdge    multiEdge type Edge whose non Multi Node is searched
 		*  \return osg::ref_ptr the found non Multi Node neigbour
 		*/
-		osg::ref_ptr<Data::Node> getMultiEdgeNeighbour(osg::ref_ptr<Data::Edge> multiEdge);
-		
-		osg::ref_ptr<Data::Node> addHyperEdge(QString name, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* getMultiEdgeNeighbour(Data::Edge* multiEdge);
+
+		Data::Node* addHyperEdge(QString name, osg::Vec3f position = osg::Vec3f(0,0,0)); 
 
 		/**
-		*  \fn public  removeEdge(osg::ref_ptr<Data::Edge> edge)
+		*  \fn public  removeEdge(Data::Edge* edge)
 		*  \brief Removes an Edge from the Graph
 		*  \param       edge the Edge to be removed from the Graph  
 		*/
-		void removeEdge(osg::ref_ptr<Data::Edge> edge);
+		void removeEdge(Data::Edge* edge);
         
 
 		/**
@@ -394,33 +389,33 @@ namespace Data
 		/**
 		*  \fn inline public constant  getNodes
 		*  \brief Returns QMap of the Nodes assigned to the Graph
-		*  \return QMap<qlonglong,osg::ref_ptr<Data::Node> > * Nodes assigned to the Graph
+		*  \return QMap<qlonglong,Data::Node* > * Nodes assigned to the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >* getNodes() const { return nodes; } 
+		QMap<qlonglong, Data::Node* >* getNodes() const { return nodes; } 
 
 
 		/**
 		*  \fn inline public constant  getEdges
 		*  \brief Returns QMap of the Edges assigned to the Graph
-		*  \return QMap<qlonglong,osg::ref_ptr<Data::Edge> > * Edges assigned to the Graph
+		*  \return QMap<qlonglong,Data::Edge* > * Edges assigned to the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> >* getEdges() const { return edges; } 
+		QMap<qlonglong, Data::Edge* >* getEdges() const { return edges; } 
 
 
 		/**
 		*  \fn inline public constant  getMetaNodes
 		*  \brief Returns QMap of the meta-Nodes assigned to the Graph
-		*  \return QMap<qlonglong,osg::ref_ptr<Data::Node> > * meta-Nodes assigned to the Graph
+		*  \return QMap<qlonglong,Data::Node* > * meta-Nodes assigned to the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >* getMetaNodes() const { return metaNodes; } 
+		QMap<qlonglong, Data::Node* >* getMetaNodes() const { return metaNodes; } 
 
 
 		/**
 		*  \fn inline public constant  getMetaEdges
 		*  \brief Returns meta-Edges assigned to the Graph
-		*  \return QMap<qlonglong,osg::ref_ptr<Data::Edge> > * meta-Edges assigned to the Graph
+		*  \return QMap<qlonglong,Data::Edge* > * meta-Edges assigned to the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> >* getMetaEdges() const { return metaEdges; } 
+		QMap<qlonglong, Data::Edge* >* getMetaEdges() const { return metaEdges; } 
 
 
 		/**
@@ -508,15 +503,10 @@ namespace Data
 		Data::Type* getRestrictionNodeMetaType();
 
 		/**
-		 * \brief Gets reference to the restrictions manager associated with this graph.
-		 */
-		Layout::RestrictionsManager & getRestrictionsManager (void);
-
-		/**
 		 * \brief Adds node used to manipulate the restrictions.
 		 */
-		osg::ref_ptr<Data::Node> addRestrictionNode(QString name, osg::Vec3f position);
-		
+		Data::Node* addRestrictionNode(QString name, osg::Vec3f position);
+
 		/**
 		*  \fn inline public  setEleIdCounter
 		*  \brief Set element ID counter
@@ -571,7 +561,7 @@ namespace Data
 		*	qlonglong parent_id
 		*	\brief ID of the parent Node
 		*/
-		QList<osg::ref_ptr<Data::Node> > parent_id;
+		QList<Data::Node* > parent_id;
         
 		/**
 		*  QString name
@@ -598,10 +588,10 @@ namespace Data
         bool inDB;
 
 		/**
-		*  osg::ref_ptr<Data::Node> lastNode
+		*  Data::Node* lastNode
 		*  \brief stores last node added into graph
 		*/
-		osg::ref_ptr<Data::Node> lastNode;
+		Data::Node* lastNode;
         
 
 		/**
@@ -633,10 +623,10 @@ namespace Data
         
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Node> > newNodes
+		*  QMap<qlonglong,Data::Node* > newNodes
 		*  \brief New Nodes that have been added to the Graph but are not yet in database
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Node> > newNodes;
+		QMap<qlonglong, Data::Node* > newNodes;
 
 		/**
 		*  QMap<qlonglong,Data::Type*> newTypes
@@ -645,36 +635,36 @@ namespace Data
 		QMap<qlonglong, Data::Type*> newTypes;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Edge> > newEdges
+		*  QMap<qlonglong,Data::Edge* > newEdges
 		*  \brief New Edges that have been added to the Graph but are not yet in database
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> > newEdges;
+		QMap<qlonglong, Data::Edge* > newEdges;
 
 		QSet<Data::Node *> nestedNodes;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Node> > * nodes
+		*  QMap<qlonglong,Data::Node* > * nodes
 		*  \brief Nodes in the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >* nodes;
+		QMap<qlonglong, Data::Node* >* nodes;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Edge> > * edges
+		*  QMap<qlonglong,Data::Edge* > * edges
 		*  \brief Edges in the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> >* edges;
+		QMap<qlonglong, Data::Edge* >* edges;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Node> > * metaNodes
+		*  QMap<qlonglong,Data::Node* > * metaNodes
 		*  \brief Meta-Nodes in the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Node> >* metaNodes;
+		QMap<qlonglong, Data::Node* >* metaNodes;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Edge> > * metaEdges
+		*  QMap<qlonglong,Data::Edge* > * metaEdges
 		*  \brief Meta-Edges in the Graph
 		*/
-		QMap<qlonglong, osg::ref_ptr<Data::Edge> >* metaEdges;
+		QMap<qlonglong, Data::Edge* >* metaEdges;
 
 		QList<QSet<Data::Node *> > nestetSubGraphs;
 
@@ -689,36 +679,31 @@ namespace Data
 		*  \brief Flag if the Graph is frozen or not (used by layout algorithm)
 		*/
 		bool frozen;
-		
+
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Edge> > edgesByType
+		*  QMap<qlonglong,Data::Edge* > edgesByType
 		*  \brief Edges in the Graph sorted by their Type
 		*/
-		QMultiMap<qlonglong, osg::ref_ptr<Data::Edge> > edgesByType;
+		QMultiMap<qlonglong, Data::Edge* > edgesByType;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Node> > nodesByType
+		*  QMap<qlonglong,Data::Node* > nodesByType
 		*  \brief Nodes in the Graph sorted by their Type
 		*/
-		QMultiMap<qlonglong, osg::ref_ptr<Data::Node> > nodesByType;
+		QMultiMap<qlonglong, Data::Node* > nodesByType;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Edge> > metaEdgesByType
+		*  QMap<qlonglong,Data::Edge* > metaEdgesByType
 		*  \brief Meta-Edges in the Graph sorted by their Type
 		*/
-        QMultiMap<qlonglong, osg::ref_ptr<Data::Edge> > metaEdgesByType;
+        QMultiMap<qlonglong, Data::Edge* > metaEdgesByType;
 
 		/**
-		*  QMap<qlonglong,osg::ref_ptr<Data::Node> > metaNodesByType
+		*  QMap<qlonglong,Data::Node* > metaNodesByType
 		*  \brief Meta-Nodes in the Graph sorted by their Type
 		*/
-        QMultiMap<qlonglong, osg::ref_ptr<Data::Node> > metaNodesByType;
+        QMultiMap<qlonglong, Data::Node* > metaNodesByType;
 
-        /**
-		 * \brief Restrictions manager of this graph (object storing restrictions and providing
-		 * interface for setting restrictions and getting restricted positions).
-		 */
-        Layout::RestrictionsManager restrictionsManager_;
 
 	};
 }

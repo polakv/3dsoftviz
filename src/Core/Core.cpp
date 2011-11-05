@@ -5,7 +5,6 @@
  */
 
 #include "Core/Core.h"
-#include "Util/ApplicationConfig.h"
 
 AppCore::Core * AppCore::Core::core;
 
@@ -14,17 +13,17 @@ AppCore::Core::Core(QApplication * app)
 	//Application initialization
     core = this;
 
-    Util::ApplicationConfig *appConf = Util::ApplicationConfig::get();
+    //Util::ApplicationConfig *appConf = Util::ApplicationConfig::get();
 
-    messageWindows = new QOSG::MessageWindows();
+    //messageWindows = new QOSG::MessageWindows();
 
 	//Counting forces for layout algorithm, init layout, viewer and window
     this->alg = new Layout::FRAlgorithm();
 
     this->thr = new Layout::LayoutThread(this->alg);
-    this->cg = new Vwr::CoreGraph();
-    this->cw = new QOSG::CoreWindow(0, this->cg, app, this->thr);
-    this->cw->resize(
+    //this->cg = new Vwr::CoreGraph();
+    //this->cw = new QOSG::CoreWindow(0, this->cg, app, this->thr);
+    /*this->cw->resize(
     	appConf->getNumericValue (
     		"UI.MainWindow.DefaultWidth",
     		std::auto_ptr<long> (new long(200)),
@@ -37,8 +36,8 @@ AppCore::Core::Core(QApplication * app)
 			std::auto_ptr<long> (NULL),
 			768
 		)
-    );
-    this->cw->show();
+    );*/
+    //this->cw->show();
 
     app->exec();
 }
@@ -55,14 +54,23 @@ void AppCore::Core::restartLayout()
 	this->thr->wait();
     delete this->thr;
 
-    this->alg->SetGraph(Manager::GraphManager::getInstance()->getActiveGraph());
+	/*
+		-----SEM NAHODIT NOVY GRAF TYPU Data::Graph------
+		this->alg->SetGraph(new Data::Graph)
+	*/
+
+    //this->alg->SetGraph(Manager::GraphManager::getInstance()->getActiveGraph());
+
+	/*
+
+	*/
     this->alg->SetParameters(10,0.7,1,true);
     this->thr = new Layout::LayoutThread(this->alg);
-    this->cw->setLayoutThread(thr);
-    this->cg->reload(Manager::GraphManager::getInstance()->getActiveGraph());
+    //this->cw->setLayoutThread(thr);
+    //this->cg->reload(Manager::GraphManager::getInstance()->getActiveGraph());
     this->thr->start();
     this->thr->play();
-    this->messageWindows->closeLoadingDialog();
+    //this->messageWindows->closeLoadingDialog();
 }
 
 AppCore::Core * AppCore::Core::getInstance(QApplication * app)

@@ -2,7 +2,6 @@
 #define LAYOUT_LAYOUT_THREAD_DEF 1
 
 #include <QThread>
-#include "Util/ApplicationConfig.h"
 //#include "Layout/Layout.h"
 #include "Layout/FRAlgorithm.h"
 
@@ -91,7 +90,6 @@ namespace Layout
 		*  Util::ApplicationConfig * appConf
 		*  \brief Object of application config
 		*/
-		Util::ApplicationConfig* appConf;
 	};
 }
 

@@ -17,12 +17,11 @@
 #include <QThread>
 #include <QSharedPointer>
 
-#include "Viewer/DataHelper.h"
 #include "Data/Edge.h"
 #include "Data/Node.h"
 #include "Data/Type.h"
 #include "Data/Graph.h"
-#include "Util/ApplicationConfig.h"
+//#include "Util/ApplicationConfig.h"
 
 namespace Layout
 {

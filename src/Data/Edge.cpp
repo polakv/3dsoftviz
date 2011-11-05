@@ -4,7 +4,7 @@
  */
 #include "Data/Edge.h"
 
-Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, float scaling, int pos, osg::ref_ptr<osg::Camera> camera) : osg::DrawArrays(osg::PrimitiveSet::QUADS, pos, 4)
+Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, float scaling, int pos, osg::ref_ptr<osg::Camera> camera) : osg::DrawArrays(osg::PrimitiveSet::QUADS, pos, 4)
 {
     this->id = id;
     this->name = name;
@@ -24,7 +24,6 @@ Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, osg::ref_ptr<Da
     
     this->edgeColor = osg::Vec4(r, g, b, a);
     	
-    this->appConf = Util::ApplicationConfig::get();
     coordinates = new osg::Vec3Array();
     edgeTexCoords = new osg::Vec2Array();
        
@@ -46,10 +45,9 @@ Data::Edge::~Edge(void)
 	}
 	
     this->type = NULL;
-    this->appConf = NULL;
 }
 
-void Data::Edge::linkNodes(QMap<qlonglong, osg::ref_ptr<Data::Edge> > *edges)
+void Data::Edge::linkNodes(QMap<qlonglong, Data::Edge* > *edges)
 {
     edges->insert(this->id, this);
     this->dstNode->addEdge(this);
@@ -62,11 +60,6 @@ void Data::Edge::unlinkNodes()
 	this->srcNode->removeEdge(this);
 	this->srcNode = NULL;
 	this->dstNode = NULL;
-}
-
-void Data::Edge::unlinkNodesAndRemoveFromGraph() {
-	//unlinkNodes will be called from graph->removeEdge !!
-	this->graph->removeEdge(this);
 }
 
 void Data::Edge::updateCoordinates(osg::Vec3 srcPos, osg::Vec3 dstPos)
@@ -91,9 +84,6 @@ void Data::Edge::updateCoordinates(osg::Vec3 srcPos, osg::Vec3 dstPos)
 	}
 	
 	viewVec.normalize();
-
-	//getting setting for edge scale
-	float graphScale = appConf->getValue("Viewer.Display.NodeDistanceScale").toFloat();
 
 	osg::Vec3 x, y;
 	x.set(srcPos);
@@ -123,30 +113,5 @@ void Data::Edge::updateCoordinates(osg::Vec3 srcPos, osg::Vec3 dstPos)
 
 	if (label != NULL)
 		label->setPosition((srcPos + dstPos) / 2 );
-}
-
-osg::ref_ptr<osg::Drawable> Data::Edge::createLabel(QString name)
-{
-	label = new osgText::FadeText;
-	label->setFadeSpeed(0.03);
-
-	QString fontPath = Util::ApplicationConfig::get()->getValue("Viewer.Labels.Font");
-
-	// experimental value
-	float scale = 1.375f * this->type->getScale();
-
-	if(fontPath != NULL && !fontPath.isEmpty())
-		label->setFont(fontPath.toStdString());
-
-	label->setText(name.toStdString());
-	label->setLineSpacing(0);
-	label->setAxisAlignment(osgText::Text::SCREEN);
-	label->setCharacterSize(scale);
-	label->setDrawMode(osgText::Text::TEXT);
-	label->setAlignment(osgText::Text::CENTER_BOTTOM_BASE_LINE);
-	label->setPosition((this->dstNode->getTargetPosition() + this->srcNode->getTargetPosition()) / 2 );
-	label->setColor( osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f) );
-
-	return label;
 }
 

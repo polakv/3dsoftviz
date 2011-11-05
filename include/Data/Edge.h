@@ -18,7 +18,6 @@
 #include <osgText/Text>
 #include <osgText/FadeText>
 
-#include "Util/ApplicationConfig.h"
 
 namespace Data
 {
@@ -37,7 +36,7 @@ namespace Data
 	public:
 
 		/**
-		* \fn public constructor Edge(qlonglong id, QString name, Data::Graph* graph, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, int pos = 0, osg::ref_ptr<osg::Camera> camera = 0)
+		* \fn public constructor Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, int pos = 0, osg::ref_ptr<osg::Camera> camera = 0)
 		* \brief  Creates new Edge object connecting two Nodes
 		*
 		* \param id	ID of the Edge 
@@ -50,7 +49,7 @@ namespace Data
 		* \param pos int		first coordinate in Drawable coordinates array 
 		* \param camera 	current camera used in viewer
 		*/
-		Edge(qlonglong id, QString name, Data::Graph* graph, osg::ref_ptr<Data::Node> srcNode, osg::ref_ptr<Data::Node> dstNode, Data::Type* type, bool isOriented, float scaling, int pos = 0, osg::ref_ptr<osg::Camera> camera = 0);
+		Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, float scaling, int pos = 0, osg::ref_ptr<osg::Camera> camera = 0);
 
 		/**
 		*  \fn public destructor  ~Edge
@@ -97,9 +96,9 @@ namespace Data
 		/**
 		* \fn inline public constant getSrcNode
 		* \brief  Returns the starting Node of the Edge
-		* \return osg::ref_ptr<Data::Node> starting Node of the Edge
+		* \return Data::Node* starting Node of the Edge
 		*/
-		osg::ref_ptr<Data::Node> getSrcNode() const { return srcNode; }
+		Data::Node* getSrcNode() const { return srcNode; }
 
 		/**
 		* \fn inline public constant setSrcNode
@@ -109,24 +108,24 @@ namespace Data
 		*
 		* \param val new starting Node of the Edge
 		*/
-		void setSrcNode(osg::ref_ptr<Data::Node> val) { srcNode = val; }
+		void setSrcNode(Data::Node* val) { srcNode = val; }
 
 		/**
 		* \fn inline public constant getDstNode
 		* \brief  Returns ending Node of the Edge 
-		* \return osg::ref_ptr<Data::Node> ending Node of the Edge
+		* \return Data::Node* ending Node of the Edge
 		*/
-		osg::ref_ptr<Data::Node> getDstNode() const { return dstNode; }
+		Data::Node* getDstNode() const { return dstNode; }
 
 		/**
-		* \fn inline public setDstNode(osg::ref_ptr<Data::Node> val) 
+		* \fn inline public setDstNode(Data::Node* val) 
 		* \brief Sets new ending Node of the Edge
 		*
 		* OBSOLETE - DO NOT USE IT
 		*
 		* \param val new ending Node of the Edge
 		*/
-		void setDstNode(osg::ref_ptr<Data::Node> val) { dstNode = val; }
+		void setDstNode(Data::Node* val) { dstNode = val; }
 
 		/**
 		* \fn inline public constant getType
@@ -160,11 +159,11 @@ namespace Data
 		void setOriented(bool val) { oriented = val; }
 
 		/**
-		* \fn public linkNodes(QMap<qlonglong, osg::ref_ptr<Data::Edge> > *edges)
+		* \fn public linkNodes(QMap<qlonglong, Data::Edge* > *edges)
 		* \brief  Links the Edge to it's Nodes and adds itself to the edges
 		* \param  edges 
 		*/
-		void linkNodes(QMap<qlonglong, osg::ref_ptr<Data::Edge> > *edges);
+		void linkNodes(QMap<qlonglong, Data::Edge* > *edges);
 
 		/**
 		* \fn public unlinkNodes
@@ -350,16 +349,16 @@ namespace Data
 		QString name;
 
 		/**
-		*  osg::ref_ptr<Data::Node> srcNode
+		*  Data::Node* srcNode
 		*  \brief Starting Node of the Edge
 		*/
-		osg::ref_ptr<Data::Node> srcNode;
+		Data::Node* srcNode;
 
 		/**
-		*  osg::ref_ptr<Data::Node> dstNode
+		*  Data::Node* dstNode
 		*  \brief Ending Node of the Edge
 		*/
-		osg::ref_ptr<Data::Node> dstNode;
+		Data::Node* dstNode;
 
 		/**
 		*  Data::Type * type
@@ -417,13 +416,6 @@ namespace Data
 		*  \brief Label of the Edge
 		*/
 		osg::ref_ptr<osgText::FadeText> label;
-
-
-		/**
-		*  Util::ApplicationConfig * appConf
-		*  \brief ApplicationConfig
-		*/
-		Util::ApplicationConfig * appConf;
 
 
 		/**
