@@ -3,7 +3,7 @@
 using namespace Data;
 
 //Nepouziva sa
-osg::Vec3f GraphSerializer::getRandomPosition()
+Data::Vector GraphSerializer::getRandomPosition()
 {
 	//nastavime nahodne inicializnacne suradnice v 3D
 	int x, y, z;
@@ -17,7 +17,7 @@ osg::Vec3f GraphSerializer::getRandomPosition()
 	y = lowest + int(range * rand() / (RAND_MAX + 1.0));
 	z = lowest + int(range * rand() / (RAND_MAX + 1.0));
 
-	return osg::Vec3f(x, y, z);
+	return Data::Vector(x, y, z);
 }
 
 GraphSerializer::GraphSerializer(std::vector<Data::Node*> *in_nodes,std::vector<Data::Edge*> *in_edges,std::vector<Data::Type*> *in_types)

@@ -15,12 +15,12 @@ FRAlgorithm::FRAlgorithm()
 	MAX_DISTANCE = 400;	
 	state = RUNNING;
 	notEnd = true;
-	center = osg::Vec3f (0,0,0);
-	fv = osg::Vec3f();
-	last = osg::Vec3f();
-	newLoc = osg::Vec3f();
-	up = osg::Vec3f();
-	vp = osg::Vec3f();	
+	center = Data::Vector (0,0,0);
+	fv = Data::Vector();
+	last = Data::Vector();
+	newLoc = Data::Vector();
+	up = Data::Vector();
+	vp = Data::Vector();	
 	
 	/* moznost odpudiveho posobenia limitovaneho vzdialenostou*/
 	useMaxDistance = false;
@@ -35,13 +35,13 @@ FRAlgorithm::FRAlgorithm(Data::Graph *graph)
 	MAX_DISTANCE = 400;	
 	state = RUNNING;
 	notEnd = true;
-	osg::Vec3f p(0,0,0);	
+	Data::Vector p(0,0,0);	
 	center = p;	
-	fv = osg::Vec3f();
-	last = osg::Vec3f();
-	newLoc = osg::Vec3f();
-	up = osg::Vec3f();
-	vp = osg::Vec3f();	
+	fv = Data::Vector();
+	last = Data::Vector();
+	newLoc = Data::Vector();
+	up = Data::Vector();
+	vp = Data::Vector();	
 	
 	/* moznost odpudiveho posobenia limitovaneho vzdialenostou*/
 	useMaxDistance = false;
@@ -89,19 +89,19 @@ void FRAlgorithm::Randomize()
 	{		
 		//if(!j.value()->isFixed())
 		//{
-			osg::Vec3f randPos = getRandomLocation();
+			Data::Vector randPos = getRandomLocation();
 			j.value()->setTargetPosition(randPos);
 		//}
 	}	
 	//graph->setFrozen(false);
 }
 
-osg::Vec3f FRAlgorithm::getRandomLocation() 
+Data::Vector FRAlgorithm::getRandomLocation() 
 {
 	double l = getRandomDouble() * 300;	
 	double alpha = getRandomDouble() * 2 * PI;
 	double beta = getRandomDouble() * 2 * PI;
-	osg::Vec3f newPos =  osg::Vec3f((float) (l * sin(alpha)), (float) (l * cos(alpha) * cos(beta)), (float) (l	* cos(alpha) * sin(beta)));
+	Data::Vector newPos =  Data::Vector((float) (l * sin(alpha)), (float) (l * cos(alpha) * cos(beta)), (float) (l	* cos(alpha) * sin(beta)));
 	return newPos;
 }
 double FRAlgorithm::getRandomDouble()
@@ -298,7 +298,7 @@ bool FRAlgorithm::iterate()
 bool FRAlgorithm::applyForces(Data::Node* node) 
 {
 	// nakumulovana sila
-	osg::Vec3f fv = node->getForce();
+	Data::Vector fv = node->getForce();
 	// zmensenie
 	fv *= ALPHA;
 	float l = fv.length();
@@ -317,7 +317,7 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 		//             we needed to compute and maybe restrict the target position even if this case; setting the velocity to null vector
 		//             and setting it as a velocity has the same effect as resetVelocity()
 		// reset velocity
-		fv = osg::Vec3(0,0,0);
+		fv = Data::Vector(0,0,0); // Data::Vector(0,0,0);
 		// [GrafIT]
 	}
 
@@ -325,10 +325,10 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 		-------Toto nie je treba, je to len pripocitanie suradnic ktore ovplyvni obmedzovac---------
 
 	// [GrafIT][.] using restrictions
-	osg::Vec3f originalTargetPosition = node->getTargetPosition ();
+	Data::Vector originalTargetPosition = node->getTargetPosition ();
 
-	osg::Vec3f computedTargetPosition = originalTargetPosition + fv;
-	osg::Vec3f restrictedTargetPosition = graph->getRestrictionsManager ().applyRestriction (*node, computedTargetPosition);
+	Data::Vector computedTargetPosition = originalTargetPosition + fv;
+	Data::Vector restrictedTargetPosition = graph->getRestrictionsManager ().applyRestriction (*node, computedTargetPosition);
 	node->setTargetPosition(restrictedTargetPosition);
 	// [GrafIT]
 
@@ -420,9 +420,9 @@ float FRAlgorithm::centr(double distance) {
 	return (float) distance;
 }
 
-double FRAlgorithm::distance(osg::Vec3f u,osg::Vec3f v)
+double FRAlgorithm::distance(Data::Vector u,Data::Vector v)
 {
-	osg::Vec3f x = u - v;
+	Data::Vector x = u - v;
 	return (double) x.length();
 }
 

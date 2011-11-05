@@ -188,7 +188,7 @@ bool Data::Graph::isInSameGraph(Data::Node * nodeA, Data::Node * nodeB)
 	return false;
 }
 
-Data::Node* Data::Graph::addNode(QString name, Data::Type* type, osg::Vec3f position)
+Data::Node* Data::Graph::addNode(QString name, Data::Type* type, Data::Vector position)
 {
 	Data::Type* metype;
 
@@ -253,7 +253,7 @@ Data::Node* Data::Graph::addNode(QString name, Data::Type* type, osg::Vec3f posi
     return node;
 }
 
-Data::Node* Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position)
+Data::Node* Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, Data::Vector position)
 {
 	//vytvorime novy objekt uzla
     Data::Node* node = new Data::Node(id, name, type, this->getNodeScale(), this, position);
@@ -280,7 +280,7 @@ Data::Node* Data::Graph::addNode(qlonglong id, QString name, Data::Type* type, o
     return node;
 }
 
-Data::Node* Data::Graph::mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position)
+Data::Node* Data::Graph::mergeNodes(QLinkedList<Data::Node* > * selectedNodes, Data::Vector position)
 {
 	//vyratame velkost zluceneho uzla podla velkosti zlucovanych uzlov
 	float scale = this->getNodeScale() + (selectedNodes->count() / 2);
@@ -359,7 +359,7 @@ void Data::Graph::separateNodes(QLinkedList<Data::Node* > * selectedNodes)
 			//najdeme vsetky uzly a zrusime mask
 			//najdeme vsetky hrany spojene s tymto uzlom a nastavime im scale
 			//nastavime poziciu na mergeNode a zrusime tento uzol
-			osg::Vec3f position = (*i)->getCurrentPosition();
+			Data::Vector position = (*i)->getCurrentPosition();
 
 			QMap< qlonglong,Data::Edge* >::const_iterator iedge = (*i)->getEdges()->constBegin();
 			while (iedge != (*i)->getEdges()->constEnd()) 
@@ -687,7 +687,7 @@ Data::Node* Data::Graph::getMultiEdgeNeighbour(Data::Edge* multiEdge)
 	return NULL;
 }
 
-Data::Node* Data::Graph::addHyperEdge(QString name, osg::Vec3f position) {
+Data::Node* Data::Graph::addHyperEdge(QString name, Data::Vector position) {
 	Data::Type* mtype;
 
 	//pridavame hyper hranu
@@ -1081,7 +1081,7 @@ void Data::Graph::removeNode( Data::Node* node )
 	return restrictionsManager_;
 }*/
 
-Data::Node* Data::Graph::addRestrictionNode(QString name, osg::Vec3f position) {
+Data::Node* Data::Graph::addRestrictionNode(QString name, Data::Vector position) {
 	//pridame obmedzovac reprezentovany uzlom
 	Data::Node* node = addNode (name, getRestrictionNodeMetaType (), position);
 	node->setIgnored (true);

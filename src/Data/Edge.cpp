@@ -4,7 +4,7 @@
  */
 #include "Data/Edge.h"
 
-Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, float scaling, int pos, osg::ref_ptr<osg::Camera> camera) : osg::DrawArrays(osg::PrimitiveSet::QUADS, pos, 4)
+Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* srcNode, Data::Node* dstNode, Data::Type* type, bool isOriented, float scaling, int pos) //: osg::DrawArrays(osg::PrimitiveSet::QUADS, pos, 4)
 {
     this->id = id;
     this->name = name;
@@ -13,7 +13,7 @@ Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* src
     this->dstNode = dstNode;
     this->type = type;
     this->oriented = isOriented;
-    this->camera = camera;
+    //this->camera = camera;
     this->selected = false;
 	this->inDB = false;
 	this->scale = scaling;
@@ -22,10 +22,10 @@ Data::Edge::Edge(qlonglong id, QString name, Data::Graph* graph, Data::Node* src
     float b = type->getSettings()->value("color.B").toFloat();
     float a = type->getSettings()->value("color.A").toFloat();
     
-    this->edgeColor = osg::Vec4(r, g, b, a);
+    //this->edgeColor = osg::Vec4(r, g, b, a);
     	
-    coordinates = new osg::Vec3Array();
-    edgeTexCoords = new osg::Vec2Array();
+    /*coordinates = new Data::VectorArray();*/
+    //edgeTexCoords = new osg::Vec2Array();
        
     updateCoordinates(getSrcNode()->getTargetPosition(), getDstNode()->getTargetPosition());
 }
@@ -62,34 +62,34 @@ void Data::Edge::unlinkNodes()
 	this->dstNode = NULL;
 }
 
-void Data::Edge::updateCoordinates(osg::Vec3 srcPos, osg::Vec3 dstPos)
+void Data::Edge::updateCoordinates(Data::Vector srcPos, Data::Vector dstPos)
 {
-	coordinates->clear();
-	edgeTexCoords->clear();
+	/*coordinates->clear();*/
+	//edgeTexCoords->clear();
 
-	osg::Vec3d viewVec(0, 0, 1);
-	osg::Vec3d up;
+	Data::Vector viewVec(0, 0, 1);
+	Data::Vector up;
 
-	if (camera != 0)
-	{
-		osg::Vec3d eye;
-		osg::Vec3d center;
+	//if (camera != 0)
+	//{
+	//	Data::Vector eye;
+	//	Data::Vector center;
 
-		camera->getViewMatrixAsLookAt(eye,center,up);
+	//	//camera->getViewMatrixAsLookAt(eye,center,up);
 
-		viewVec = eye - center;
+	//	viewVec = eye - center;
 
-	//	std::cout << eye.x() << " " << eye.y() << " " << eye.z() << "\n";
-	//	std::cout << center.x() << " " << center.y() << " " << center.z() << "\n";
-	}
+	////	std::cout << eye.x() << " " << eye.y() << " " << eye.z() << "\n";
+	////	std::cout << center.x() << " " << center.y() << " " << center.z() << "\n";
+	//}
 	
 	viewVec.normalize();
 
-	osg::Vec3 x, y;
+	Data::Vector x, y;
 	x.set(srcPos);
 	y.set(dstPos);
 
-	osg::Vec3d edgeDir = x - y;
+	Data::Vector edgeDir = x - y;
 	length = edgeDir.length();
 
 	up = edgeDir ^ viewVec;
@@ -98,20 +98,20 @@ void Data::Edge::updateCoordinates(osg::Vec3 srcPos, osg::Vec3 dstPos)
 	up *= this->scale;
 
 	//updating edge coordinates due to scale
-	coordinates->push_back(osg::Vec3(x.x() + up.x(), x.y() + up.y(), x.z() + up.z()));
-	coordinates->push_back(osg::Vec3(x.x() - up.x(), x.y() - up.y(), x.z() - up.z()));
-	coordinates->push_back(osg::Vec3(y.x() - up.x(), y.y() - up.y(), y.z() - up.z()));
-	coordinates->push_back(osg::Vec3(y.x() + up.x(), y.y() + up.y(), y.z() + up.z()));
+	//coordinates->push_back(Data::Vector(x.x() + up.x(), x.y() + up.y(), x.z() + up.z()));
+	//coordinates->push_back(Data::Vector(x.x() - up.x(), x.y() - up.y(), x.z() - up.z()));
+	//coordinates->push_back(Data::Vector(y.x() - up.x(), y.y() - up.y(), y.z() - up.z()));
+	//coordinates->push_back(Data::Vector(y.x() + up.x(), y.y() + up.y(), y.z() + up.z()));
 
 	int repeatCnt = length / (2 * this->scale);
 
 	//init edge-text (label) coordinates
-	edgeTexCoords->push_back(osg::Vec2(0,1.0f));
+	/*edgeTexCoords->push_back(osg::Vec2(0,1.0f));
 	edgeTexCoords->push_back(osg::Vec2(0,0.0f));
 	edgeTexCoords->push_back(osg::Vec2(repeatCnt,0.0f));
-	edgeTexCoords->push_back(osg::Vec2(repeatCnt,1.0f));
+	edgeTexCoords->push_back(osg::Vec2(repeatCnt,1.0f));*/
 
-	if (label != NULL)
-		label->setPosition((srcPos + dstPos) / 2 );
+	/*if (label != NULL)
+		label->setPosition((srcPos + dstPos) / 2 );*/
 }
 

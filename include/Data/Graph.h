@@ -6,7 +6,7 @@
 #ifndef DATA_GRAPH_DEF
 #define DATA_GRAPH_DEF 1
 
-#include <osg/ref_ptr>
+//#include <osg/ref_ptr>
 
 #include "Data/Node.h"
 #include "Data/Type.h"
@@ -203,17 +203,17 @@ namespace Data
         
 
 		/**
-		*  \fn public  addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0))
+		*  \fn public  addNode(QString name, Data::Type* type, Data::Vector position = Data::Vector(0,0,0))
 		*  \brief Creates new Node and adds it to the Graph
 		*  \param   name    name of the Node 
 		*  \param   type   Type of the Node
 		*  \param   position     position of the Node
 		*  \return osg::ref_ptr the added Node
 		*/
-		Data::Node* addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* addNode(QString name, Data::Type* type, Data::Vector position = Data::Vector(0,0,0)); 
         
 		/**
-		*  \fn public  addNode(QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0))
+		*  \fn public  addNode(QString name, Data::Type* type, Data::Vector position = Data::Vector(0,0,0))
 		*  \brief Creates new Node and adds it to the Graph
 		*  \param   id    id of the Node 
 		*  \param   name    name of the Node 
@@ -221,16 +221,16 @@ namespace Data
 		*  \param   position     position of the Node
 		*  \return osg::ref_ptr the added Node
 		*/
-		Data::Node* addNode(qlonglong id, QString name, Data::Type* type, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* addNode(qlonglong id, QString name, Data::Type* type, Data::Vector position = Data::Vector(0,0,0)); 
 
 		/**
-		*  \fn public  mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position)
+		*  \fn public  mergeNodes(QLinkedList<Data::Node* > * selectedNodes, Data::Vector position)
 		*  \brief Merge selected nodes to one (meta) node
 		*  \param   selectedNodes   selected nodes
 		*  \param   position     new position of the Nodes
 		*  \return osg::ref_ptr the created merged Node
 		*/
-		Data::Node* mergeNodes(QLinkedList<Data::Node* > * selectedNodes, osg::Vec3f position);
+		Data::Node* mergeNodes(QLinkedList<Data::Node* > * selectedNodes, Data::Vector position);
 
 		/**
 		*  \fn public  separateNodes(QLinkedList<Data::Node* > * selectedNodes)
@@ -368,7 +368,7 @@ namespace Data
 		*/
 		Data::Node* getMultiEdgeNeighbour(Data::Edge* multiEdge);
 
-		Data::Node* addHyperEdge(QString name, osg::Vec3f position = osg::Vec3f(0,0,0)); 
+		Data::Node* addHyperEdge(QString name, Data::Vector position = Data::Vector(0,0,0)); 
 
 		/**
 		*  \fn public  removeEdge(Data::Edge* edge)
@@ -505,7 +505,7 @@ namespace Data
 		/**
 		 * \brief Adds node used to manipulate the restrictions.
 		 */
-		Data::Node* addRestrictionNode(QString name, osg::Vec3f position);
+		Data::Node* addRestrictionNode(QString name, Data::Vector position);
 
 		/**
 		*  \fn inline public  setEleIdCounter

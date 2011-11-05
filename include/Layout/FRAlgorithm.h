@@ -9,7 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include <osg/Vec3f>
+//#include <osg/Data::Vector>
 #include <QMap>
 #include <math.h>
 #include <ctime>
@@ -182,10 +182,10 @@ namespace Layout
 		double K;
 		
 		/**
-		*  osg::Vec3f center
+		*  Data::Vector center
 		*  \brief center of cetripetal force
 		*/
-		osg::Vec3f center;
+		Data::Vector center;
 		
 		/**
 		*  FRAlgorithm::State state
@@ -225,51 +225,51 @@ namespace Layout
 		/**
 		*  \fn private  getRandomLocation
 		*  \brief Gets random vector
-		*  \return osg::Vec3f random vector
+		*  \return Data::Vector random vector
 		*/
-		osg::Vec3f getRandomLocation();
+		Data::Vector getRandomLocation();
 				
 		/**
-		*  osg::Vec3f fv
+		*  Data::Vector fv
 		*  \brief force vector
 		*/
-		osg::Vec3f fv;
+		Data::Vector fv;
 		
 		/**
-		*  osg::Vec3f last
+		*  Data::Vector last
 		*  \brief origin position of node
 		*/
-		osg::Vec3f last;
+		Data::Vector last;
 		
 		/**
-		*  osg::Vec3f newLoc
+		*  Data::Vector newLoc
 		*  \brief new position of node
 		*/
-		osg::Vec3f newLoc;
+		Data::Vector newLoc;
 
 		/**
-		*  osg::Vec3f up
+		*  Data::Vector up
 		*  \brief vector U
 		*/
-		osg::Vec3f up;
+		Data::Vector up;
 
 		/**
-		*  osg::Vec3f vp
+		*  Data::Vector vp
 		*  \brief vector V
 		*/
-		osg::Vec3f vp;
+		Data::Vector vp;
 		
 		/**
-		*  osg::Vec3f barycenter
+		*  Data::Vector barycenter
 		*  \brief barycenter position
 		*/
-		osg::Vec3f barycenter;
+		Data::Vector barycenter;
 		
 		/**
-		*  osg::Vec3f centripetal
+		*  Data::Vector centripetal
 		*  \brief centripetal position
 		*/
-		osg::Vec3f centripetal;
+		Data::Vector centripetal;
 
 		/**
 		*  double dist
@@ -343,13 +343,13 @@ namespace Layout
 		float centr(double distance);
 
 		/**
-		*  \fn private  distance(osg::Vec3f u,osg::Vec3f v)
+		*  \fn private  distance(Data::Vector u,Data::Vector v)
 		*  \brief Computes distance between vectors U and V.
 		*  \param       u  vector U   
 		*  \param       v  vector V   
 		*  \return double distance between two vectors
 		*/
-		double distance(osg::Vec3f u,osg::Vec3f v);
+		double distance(Data::Vector u,Data::Vector v);
 
 		/**
 		 * \brief If the nodes are not ignored and are from the same graph.

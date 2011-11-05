@@ -12,9 +12,10 @@
 #include <QString>
 #include <QTextStream>
 #include <QMap>
+#include "Data/Vector.h"
 
-#include <osg/ref_ptr>
-#include <osg/Texture2D>
+/*#include <osg/ref_ptr>
+#include <osg/Texture2D>*/
 
 namespace Data
 {
@@ -117,7 +118,7 @@ namespace Data
 		*  \brief Returns type texture
 		*  \return osg::ref_ptr<osg::Texture2D> type texture
 		*/
-		osg::ref_ptr<osg::Texture2D> getTypeTexture() const { return typeTexture; }
+		//osg::ref_ptr<osg::Texture2D> getTypeTexture() const { return typeTexture; }
 
 		/**
 		*  \fn inline public constant  getScale
@@ -190,7 +191,7 @@ namespace Data
 		*  osg::ref_ptr typeTexture
 		*  \brief Type texture
 		*/
-		osg::ref_ptr<osg::Texture2D> typeTexture;
+		//osg::ref_ptr<osg::Texture2D> typeTexture;
 
 		/**
 		*  float scale

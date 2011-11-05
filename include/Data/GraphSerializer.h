@@ -95,9 +95,9 @@ namespace Data
 		/**
 		*  \fn private  getRandomPosition
 		*  \brief Returns random position in space
-		*  \return osg::Vec3f random position in space
+		*  \return Data::Vector random position in space
 		*/
-		osg::Vec3f getRandomPosition();
+		Data::Vector getRandomPosition();
 
 		/**
 		*  \fn private  createNode

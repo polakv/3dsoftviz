@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <string>
-#include <osg/Vec3f>
 #include "Data/Type.h"
 #include "Data/Edge.h"
 #include <QMap>
@@ -34,7 +33,7 @@ namespace Data
 	public:
 
 		/**
-		*  \fn public constructor  Node(qlonglong id, QString name, Data::Type* type, Data::Graph* graph, osg::Vec3f position)
+		*  \fn public constructor  Node(qlonglong id, QString name, Data::Type* type, Data::Graph* graph, Data::Vector position)
 		*  \brief Creates new Node object
 		*  \param  id     ID of the Node
 		*  \param  name     name of the Node
@@ -42,7 +41,7 @@ namespace Data
 		*  \param  graph   Graph to which the Node belongs
 		*  \param  position    Node position in space
 		*/
-		Node(qlonglong id, QString name, Data::Type* type, float scaling, Data::Graph* graph, osg::Vec3f position);
+		Node(qlonglong id, QString name, Data::Type* type, float scaling, Data::Graph* graph, Data::Vector position);
 
 		/**
 		*  \fn public virtual destructor  ~Node
@@ -116,18 +115,18 @@ namespace Data
 		/**
 		*  \fn inline public constant  getTargetPosition
 		*  \brief Returns node target position in space
-		*  \return osg::Vec3f node position
+		*  \return Data::Vector node position
 		*  returned targetPosition IS NOT multiplied by the graph scale
 		*/
-		osg::Vec3f getTargetPosition() const { return osg::Vec3(targetPosition); }
+		Data::Vector getTargetPosition() const { return Data::Vector(targetPosition); }
 
 		/**
-		*  \fn inline public  setTargetPosition(osg::Vec3f val)
+		*  \fn inline public  setTargetPosition(Data::Vector val)
 		*  \brief Sets node target position in space
 		*  \param      val   new position
 		*  targetPosition being set MUST NOT BE multiplied by the graph scale
 		*/
-		void setTargetPosition(osg::Vec3f val) { targetPosition.set(val); }
+		void setTargetPosition(Data::Vector val) { targetPosition.set(val); }
 
 
 		/**
@@ -135,18 +134,18 @@ namespace Data
 		*  \brief Returns node actual position
 		*  \param      calculateNew    If true, new position will be calculated through interpolation
 		*  \param      float   interpolation speed
-		*  \return osg::Vec3f actual position
+		*  \return Data::Vector actual position
 		*  returned currentPosition IS already multiplied by the graph scale
 		*/
-		osg::Vec3f getCurrentPosition(bool calculateNew = false, float interpolationSpeed = 1.0f);
+		Data::Vector getCurrentPosition(bool calculateNew = false, float interpolationSpeed = 1.0f);
 
 		/**
-		*  \fn inline public  setCurrentPosition(osg::Vec3f val) 
+		*  \fn inline public  setCurrentPosition(Data::Vector val) 
 		*  \brief Sets current node position
 		*  \param   val  current node position
 		*  currentPosition being set MUST BE multiplied by the graph scale
 		*/
-		void setCurrentPosition(osg::Vec3f val) { currentPosition.set(val); }
+		void setCurrentPosition(Data::Vector val) { currentPosition.set(val); }
 
 		/**
 		*	\fn public removeAllEdges
@@ -200,31 +199,31 @@ namespace Data
         
 
 		/**
-		*  \fn inline public  setForce(osg::Vec3f v)
+		*  \fn inline public  setForce(Data::Vector v)
 		*  \brief Sets force of node
 		*  \param      v  Force vector
 		*/
-		void setForce(osg::Vec3f v) { force = v; }
+		void setForce(Data::Vector v) { force = v; }
 
 		/**
 		*  \fn inline public constant  getForce
 		*  \brief Gets force of node
-		*  \return osg::Vec3f Force vector
+		*  \return Data::Vector Force vector
 		*/
-		osg::Vec3f getForce() const { return force; }
+		Data::Vector getForce() const { return force; }
 
 		/**
 		*  \fn inline public  addForce(bool fixed) 
 		*  \brief Adds force V to node force
 		*  \param       v  Force V
 		*/
-		void addForce(osg::Vec3f v) { force += v; }
+		void addForce(Data::Vector v) { force += v; }
 
 		/**
 		*  \fn inline public  resetForce
 		*  \brief Sets nodes force to zero value.
 		*/
-		void resetForce() { force = osg::Vec3f(0,0,0); }
+		void resetForce() { force = Data::Vector(0,0,0); }
 		
 		/**
 		*  \fn inline public  setFixed(bool fixed) 
@@ -305,24 +304,24 @@ namespace Data
 		bool isRemovableByUser () {return removableByUser; }
 
 		/**
-		*  \fn inline public  setVelocity(osg::Vec3f v)
+		*  \fn inline public  setVelocity(Data::Vector v)
 		*  \brief Sets node force for next iteration
 		*  \param    v  Force in actual iteration  
 		*/
-		void setVelocity(osg::Vec3f v) { velocity = v; }
+		void setVelocity(Data::Vector v) { velocity = v; }
 
 		/**
 		*  \fn inline public  resetVelocity
 		*  \brief Reset node force for next iteration
 		*/
-		void resetVelocity() {velocity = osg::Vec3(0,0,0);}
+		void resetVelocity() {velocity = Data::Vector(0,0,0);}
 
 		/**
 		*  \fn inline public constant  getVelocity
 		*  \brief Sets node force for next iteration.
-		*  \return osg::Vec3f Node force
+		*  \return Data::Vector Node force
 		*/
-		osg::Vec3f getVelocity() const { return velocity; }
+		Data::Vector getVelocity() const { return velocity; }
 
 
 		/**
@@ -366,7 +365,7 @@ namespace Data
 		*  \brief Returns color of the Node
 		*  \return osg::Vec4 color of the Node
 		*/
-		osg::Vec4 getColor() const { return color; }
+		//osg::Vec4 getColor() const { return color; }
 
 
 		/**
@@ -484,16 +483,16 @@ namespace Data
 		Data::Graph* graph;
 
 		/**
-		*  osg::Vec3f targetPosition
+		*  Data::Vector targetPosition
 		*  \brief node target position
 		*/
-		osg::Vec3f targetPosition;
+		Data::Vector targetPosition;
 
 		/**
-		*  osg::Vec3f currentPosition
+		*  Data::Vector currentPosition
 		*  \brief node current position
 		*/
-		osg::Vec3f currentPosition;
+		Data::Vector currentPosition;
 
 		/**
 		*  QMap<qlonglong, Data::Edge* > * edges
@@ -503,16 +502,16 @@ namespace Data
 		
 
 		/**
-		*  osg::Vec3f force
+		*  Data::Vector force
 		*  \brief Node force
 		*/
-		osg::Vec3f force;
+		Data::Vector force;
 
 		/**
-		*  osg::Vec3f velocity
+		*  Data::Vector velocity
 		*  \brief Size of node force in previous iteration
 		*/
-		osg::Vec3f velocity;
+		Data::Vector velocity;
 		
 
 		/**
@@ -563,7 +562,7 @@ namespace Data
 		*  \param  bbState    node stateset
 		*  \return osg::ref_ptr node drawable
 		*/
-		static osg::ref_ptr<osg::Drawable> createNode(const float & scale, osg::StateSet* bbState);
+		//static osg::ref_ptr<osg::Drawable> createNode(const float & scale, osg::StateSet* bbState);
 
 		/**
 		*  \fn private static  createStateSet(Data::Type * type = 0)
@@ -571,7 +570,7 @@ namespace Data
 		*  \param   type     node type
 		*  \return osg::ref_ptr node stateset
 		*/
-		static osg::ref_ptr<osg::StateSet> createStateSet(Data::Type * type = 0);
+		//static osg::ref_ptr<osg::StateSet> createStateSet(Data::Type * type = 0);
 
 		/**
 		*  \fn private static  createLabel(const float & scale, QString name)
@@ -580,7 +579,7 @@ namespace Data
 		*  \param       name     label text
 		*  \return osg::ref_ptr node label
 		*/
-		static osg::ref_ptr<osg::Drawable> createLabel(const float & scale, QString name);
+		//static osg::ref_ptr<osg::Drawable> createLabel(const float & scale, QString name);
 
 		/**
 		*  \fn private static  createSquare
@@ -589,14 +588,14 @@ namespace Data
 		*  \param  bbState     square stateset
 		*  \return osg::ref_ptr square drawable
 		*/
-		static osg::ref_ptr<osg::Drawable> createSquare(const float & scale, osg::StateSet* bbState);
+		//static osg::ref_ptr<osg::Drawable> createSquare(const float & scale, osg::StateSet* bbState);
 
 
 		/**
 		*  osg::Vec4 color
 		*  \brief Color of the Node
 		*/
-		osg::Vec4 color;
+		//osg::Vec4 color;
 
 
 		/**
@@ -605,7 +604,7 @@ namespace Data
 		*  \param     pos     drawable position
 		*  \param     color     drawable color
 		*/
-		void setDrawableColor(int pos, osg::Vec4 color);
+		//void setDrawableColor(int pos, osg::Vec4 color);
 
 		/**
 		*  QString labelText
@@ -618,13 +617,13 @@ namespace Data
 		*  osg::ref_ptr label
 		*  \brief Label drawable
 		*/
-		osg::ref_ptr<osg::Drawable> label;
+		//osg::ref_ptr<osg::Drawable> label;
 
 		/**
 		*  osg::ref_ptr square
 		*  \brief Square drawable
 		*/
-		osg::ref_ptr<osg::Drawable> square;
+		//osg::ref_ptr<osg::Drawable> square;
 
 	protected:
 

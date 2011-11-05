@@ -7,9 +7,9 @@
  */
 #include "Data/Node.h"
 
-typedef osg::TemplateIndexArray<unsigned int, osg::Array::UIntArrayType,4,1> ColorIndexArray;
+//typedef osg::TemplateIndexArray<unsigned int, osg::Array::UIntArrayType,4,1> ColorIndexArray;
 
-Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Data::Graph* graph, osg::Vec3f position) 
+Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Data::Graph* graph, Data::Vector position) 
 {
 	//konstruktor
 	//scaling je potrebne na zmensenie uzla ak je vnoreny
@@ -45,8 +45,8 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 	//this->square = createSquare(this->type->getScale(), Node::createStateSet());
 	//this->label = createLabel(this->type->getScale(), labelText);
 
-	this->force = osg::Vec3f();
-	this->velocity = osg::Vec3f(0,0,0);
+	this->force = Data::Vector();
+	this->velocity = Data::Vector(0,0,0);
 	this->fixed = false;
 	this->ignore = false;
 	this->positionCanBeRestricted = true;
@@ -119,16 +119,16 @@ bool Data::Node::equals(Node* node)
 	return true;
 }
 
-osg::Vec3f Data::Node::getCurrentPosition(bool calculateNew, float interpolationSpeed)  
+Data::Vector Data::Node::getCurrentPosition(bool calculateNew, float interpolationSpeed)  
 { 
 	//zisime aktualnu poziciu uzla v danom okamihu
 	if (calculateNew)
 	{
 		float graphScale = 1; 
 
-		osg::Vec3 directionVector = osg::Vec3(targetPosition.x(), targetPosition.y(), targetPosition.z()) * graphScale - currentPosition;
-		this->currentPosition = osg::Vec3(directionVector * (usingInterpolation ? interpolationSpeed : 1) + this->currentPosition);
+		Data::Vector directionVector = Data::Vector(targetPosition.x(), targetPosition.y(), targetPosition.z()) * graphScale - currentPosition;
+		this->currentPosition = Data::Vector(directionVector * (usingInterpolation ? interpolationSpeed : 1) + this->currentPosition);
 	}
 
-	return osg::Vec3(this->currentPosition); 
+	return Data::Vector(this->currentPosition); 
 }
