@@ -1,16 +1,16 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'qtcolorpicker.cpp'
 **
-** Created: Wed 14. Apr 10:26:03 2010
-**      by: The Qt Meta Object Compiler version 62 (Qt 4.6.2)
+** Created: Sat 17. Mar 19:56:32 2012
+**      by: The Qt Meta Object Compiler version 63 (Qt 4.8.0)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'qtcolorpicker.cpp' doesn't include <QObject>."
-#elif Q_MOC_OUTPUT_REVISION != 62
-#error "This file was generated using the moc from 4.6.2. It"
+#elif Q_MOC_OUTPUT_REVISION != 63
+#error "This file was generated using the moc from 4.8.0. It"
 #error "cannot be used with the include files from this version of Qt."
 #error "(The moc has changed too much.)"
 #endif
@@ -19,7 +19,7 @@ QT_BEGIN_MOC_NAMESPACE
 static const uint qt_meta_data_ColorPickerButton[] = {
 
  // content:
-       4,       // revision
+       6,       // revision
        0,       // classname
        0,    0, // classinfo
        1,   14, // methods
@@ -39,9 +39,26 @@ static const char qt_meta_stringdata_ColorPickerButton[] = {
     "ColorPickerButton\0\0clicked()\0"
 };
 
+void ColorPickerButton::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        Q_ASSERT(staticMetaObject.cast(_o));
+        ColorPickerButton *_t = static_cast<ColorPickerButton *>(_o);
+        switch (_id) {
+        case 0: _t->clicked(); break;
+        default: ;
+        }
+    }
+    Q_UNUSED(_a);
+}
+
+const QMetaObjectExtraData ColorPickerButton::staticMetaObjectExtraData = {
+    0,  qt_static_metacall 
+};
+
 const QMetaObject ColorPickerButton::staticMetaObject = {
     { &QFrame::staticMetaObject, qt_meta_stringdata_ColorPickerButton,
-      qt_meta_data_ColorPickerButton, 0 }
+      qt_meta_data_ColorPickerButton, &staticMetaObjectExtraData }
 };
 
 #ifdef Q_NO_DATA_RELOCATION
@@ -67,10 +84,8 @@ int ColorPickerButton::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        switch (_id) {
-        case 0: clicked(); break;
-        default: ;
-        }
+        if (_id < 1)
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 1;
     }
     return _id;
@@ -84,7 +99,7 @@ void ColorPickerButton::clicked()
 static const uint qt_meta_data_ColorPickerItem[] = {
 
  // content:
-       4,       // revision
+       6,       // revision
        0,       // classname
        0,    0, // classinfo
        4,   14, // methods
@@ -111,9 +126,28 @@ static const char qt_meta_stringdata_ColorPickerItem[] = {
     "color\0setColor(QColor)\0"
 };
 
+void ColorPickerItem::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        Q_ASSERT(staticMetaObject.cast(_o));
+        ColorPickerItem *_t = static_cast<ColorPickerItem *>(_o);
+        switch (_id) {
+        case 0: _t->clicked(); break;
+        case 1: _t->selected(); break;
+        case 2: _t->setColor((*reinterpret_cast< const QColor(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2]))); break;
+        case 3: _t->setColor((*reinterpret_cast< const QColor(*)>(_a[1]))); break;
+        default: ;
+        }
+    }
+}
+
+const QMetaObjectExtraData ColorPickerItem::staticMetaObjectExtraData = {
+    0,  qt_static_metacall 
+};
+
 const QMetaObject ColorPickerItem::staticMetaObject = {
     { &QFrame::staticMetaObject, qt_meta_stringdata_ColorPickerItem,
-      qt_meta_data_ColorPickerItem, 0 }
+      qt_meta_data_ColorPickerItem, &staticMetaObjectExtraData }
 };
 
 #ifdef Q_NO_DATA_RELOCATION
@@ -139,13 +173,8 @@ int ColorPickerItem::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        switch (_id) {
-        case 0: clicked(); break;
-        case 1: selected(); break;
-        case 2: setColor((*reinterpret_cast< const QColor(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2]))); break;
-        case 3: setColor((*reinterpret_cast< const QColor(*)>(_a[1]))); break;
-        default: ;
-        }
+        if (_id < 4)
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 4;
     }
     return _id;
@@ -165,7 +194,7 @@ void ColorPickerItem::selected()
 static const uint qt_meta_data_ColorPickerPopup[] = {
 
  // content:
-       4,       // revision
+       6,       // revision
        0,       // classname
        0,    0, // classinfo
        4,   14, // methods
@@ -191,9 +220,28 @@ static const char qt_meta_stringdata_ColorPickerPopup[] = {
     "hid()\0getColorFromDialog()\0updateSelected()\0"
 };
 
+void ColorPickerPopup::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+{
+    if (_c == QMetaObject::InvokeMetaMethod) {
+        Q_ASSERT(staticMetaObject.cast(_o));
+        ColorPickerPopup *_t = static_cast<ColorPickerPopup *>(_o);
+        switch (_id) {
+        case 0: _t->selected((*reinterpret_cast< const QColor(*)>(_a[1]))); break;
+        case 1: _t->hid(); break;
+        case 2: _t->getColorFromDialog(); break;
+        case 3: _t->updateSelected(); break;
+        default: ;
+        }
+    }
+}
+
+const QMetaObjectExtraData ColorPickerPopup::staticMetaObjectExtraData = {
+    0,  qt_static_metacall 
+};
+
 const QMetaObject ColorPickerPopup::staticMetaObject = {
     { &QFrame::staticMetaObject, qt_meta_stringdata_ColorPickerPopup,
-      qt_meta_data_ColorPickerPopup, 0 }
+      qt_meta_data_ColorPickerPopup, &staticMetaObjectExtraData }
 };
 
 #ifdef Q_NO_DATA_RELOCATION
@@ -219,13 +267,8 @@ int ColorPickerPopup::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        switch (_id) {
-        case 0: selected((*reinterpret_cast< const QColor(*)>(_a[1]))); break;
-        case 1: hid(); break;
-        case 2: getColorFromDialog(); break;
-        case 3: updateSelected(); break;
-        default: ;
-        }
+        if (_id < 4)
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 4;
     }
     return _id;
