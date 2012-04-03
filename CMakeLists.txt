@@ -2,6 +2,11 @@ PROJECT(3DVisual)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 SET (CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS true)
 
+# Add some custom .cmake scripts not in the official distribution
+SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/CMakeModules")     
+SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/CMakeModules/cuda")
+SET(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/CMakeModules/osgcompute")
+
 # Where to install module parts:
 SET (INSTALL_BIN . CACHE PATH "Directory for binaries.")
 SET (INSTALL_LIB . CACHE PATH "Directory for external libraries.")
@@ -33,21 +38,9 @@ ENDIF()
 
 
 SET (CMAKE_INCLUDE_PATH 
-	#${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/igraph-0.5.2/_install/include
-	${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Windows/include
 	${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/libnoisesrc-1.0.0/src
-	${CMAKE_INCLUDE_PATH})
-SET (CMAKE_LIBRARY_PATH 
-#${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/igraph-0.5.2/_install/lib
-			${CMAKE_LIBRARY_PATH})
-
-
-#~ FIND_PACKAGE(ZLIB NO_DEFAULT_PATH)
-#~ FIND_PACKAGE(PNG NO_DEFAULT_PATH)
-
-FIND_PACKAGE(ZLIB)
-FIND_PACKAGE(PNG )
-
+	${CMAKE_INCLUDE_PATH}
+)   
 
 # Find Qt
 FIND_PACKAGE(Qt4 REQUIRED)
@@ -59,44 +52,57 @@ SET(QT_USE_QTNETWORK 1)
 INCLUDE(${QT_USE_FILE})
 INCLUDE_DIRECTORIES(${QT_INCLUDE_DIR} )
 
+# Find OpenGL
+FIND_PACKAGE(OpenGL)
+
+# Find zlib, pnglib
+FIND_PACKAGE(ZLIB)
+FIND_PACKAGE(PNG) 
+
 # Find OpenSceneGraph
 FIND_PACKAGE(OpenSceneGraph COMPONENTS 
-osgGA 
-osgUtil 
-OpenThreads 
-osg 
-osgAnimation 
-osgDB
-osgFX
-#~ osgIntrospection
-osgManipulator
-osgParticle
-osgShadow
-osgSim
-osgTerrain
-osgText
-osgVolume
-osgWidget)
-FIND_PACKAGE(osgViewer)
-
-# Find iGraph
-#FIND_PATH(IGRAPH_INCLUDE_DIRECTORIES NAMES "igraph/igraph.h")
-#FIND_LIBRARY(IGRAPH_LIBRARIES NAMES igraph)
-
+  osgGA 
+  osgUtil 
+  OpenThreads 
+  osg 
+  osgAnimation 
+  osgDB
+  osgFX
+  osgManipulator
+  osgParticle
+  osgShadow
+  osgSim
+  osgTerrain
+  osgText
+  osgVolume
+  osgWidget
+  osgViewer
+) 
 MESSAGE ("osg libraries:: ${OPENSCENEGRAPH_LIBRARIES}")
-#MESSAGE ("igraph includes:: ${IGRAPH_INCLUDE_DIRECTORIES}")
-#MESSAGE ("igraph libraries:: ${IGRAPH_LIBRARIES}")
+
+# set specific argument to nvcc compiler for paralel nsight debugging
+SET (CUDA_NVCC_USER_OPTIONS "-G0 -arch sm_10" CACHE	STRING "Set additional user specific compiler options to Cuda nvcc")
+
+# Find Cuda
+FIND_PACKAGE(Cuda)
+
+# Find osgCompute, osgCuda
+FIND_PACKAGE(osgCompute)
+FIND_PACKAGE(osgCuda)
 
 # Include headers
 INCLUDE_DIRECTORIES(
-${PNG_INCLUDE_DIRECTORIES}
-${ZLIB_INCLUDE_DIRECTORIES}
-#${IGRAPH_INCLUDE_DIRECTORIES}
-${OPENSCENEGRAPH_INCLUDE_DIRS} 
-${OSGVIEWER_INCLUDE_DIR} 
-${CMAKE_CURRENT_SOURCE_DIR}/include
-${CMAKE_INCLUDE_PATH}
-${CMAKE_CURRENT_BINARY_DIR} "./")
+  ${OPENGL_INCLUDE_DIR}
+  ${ZLIB_INCLUDE_DIRECTORIES}
+  ${PNG_INCLUDE_DIRECTORIES}
+  ${OPENSCENEGRAPH_INCLUDE_DIRS} 
+  ${CUDA_INCLUDE_PATH}
+  ${OSGCOMPUTE_INCLUDE_DIR}
+  ${OSGCUDA_INCLUDE_PATH} 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_INCLUDE_PATH}
+  ${CMAKE_CURRENT_BINARY_DIR} "./"
+)
 
 # Build dependencies
 ADD_SUBDIRECTORY(dependencies/Source)
@@ -122,7 +128,22 @@ SET(SOURCES_H
 # toto makro spracuje Q_OBJECT a vygeneruje novy cpp subor, ktory bude dostupny v ${SOURCES_H_MOC} premennej
 QT4_WRAP_CPP( SOURCES_H_MOC ${SOURCES_H} )
 
-ADD_EXECUTABLE(3DVisual ${INCL} ${SOURCES_H_MOC} ${SRC})
+# collect cuda kernel sources
+SET(MY_CUDA_SOURCE_FILES
+  ./src/Gpu/LayoutKernel.cu
+)
+
+# Use the WRAP_CUDA macro.
+WRAP_CUDA( CUDA_FILES ${MY_CUDA_SOURCE_FILES} )
+
+SET(SRC
+    ${SRC}
+    ${SOURCES_H_MOC}
+    ${CUDA_FILES}
+    ${MY_CUDA_SOURCE_FILES}
+)
+
+ADD_EXECUTABLE(3DVisual ${INCL} ${SRC})
 
 SOURCE_GROUP(\\src main.cpp)
 SOURCE_GROUP(\\src\\Viewer "^.*Viewer/.*$")
@@ -136,6 +157,7 @@ SOURCE_GROUP(\\src\\Layout "^.*Layout/.*$")
 SOURCE_GROUP(\\src\\QOSG "^.*QOSG/.*$")
 SOURCE_GROUP(\\src\\OsgQtBrowser "^.*OsgQtBrowser/.*$")
 SOURCE_GROUP(\\src\\Noise "^.*Noise/.*$")
+SOURCE_GROUP(\\src\\Gpu "^.*Gpu/.*$")
 
 SOURCE_GROUP(\\headers\\Viewer "^.*Viewer/.*h$")
 SOURCE_GROUP(\\headers\\Core "^.*Core/.*h$")
@@ -148,19 +170,23 @@ SOURCE_GROUP(\\headers\\Layout "^.*Layout/.*h$")
 SOURCE_GROUP(\\headers\\QOSG "^.*QOSG/.*h$")
 SOURCE_GROUP(\\headers\\Noise "^.*Noise/.*h$")
 SOURCE_GROUP(\\headers\\OsgQtBrowser "^.*OsgQtBrowser/.*h$")
+SOURCE_GROUP(\\headers\\Gpu "^.*Gpu/.*h$")
 
 SOURCE_GROUP(\\MOC "^.*moc_.*$")
 
 TARGET_LINK_LIBRARIES(3DVisual	
-${QT_LIBRARIES}  
-${OPENSCENEGRAPH_LIBRARIES} 
-${OSGVIEWER_LIBRARIES}
-${PNG_LIBRARIES}
-${ZLIB_LIBRARIES}
-#${IGRAPH_LIBRARIES}
-${ZLIB_LIBRARY}
-${PNG_LIBRARY}
-noise
+  ${QT_LIBRARIES}
+  ${OPENGL_LIBRARIES} 
+  ${ZLIB_LIBRARIES} 
+  ${PNG_LIBRARIES}
+  ${ZLIB_LIBRARY}
+  ${PNG_LIBRARY}
+  ${OPENSCENEGRAPH_LIBRARIES} 
+  ${OSGVIEWER_LIBRARIES}
+  ${CUDA_RUNTIME_LIBRARY}
+  ${OSGCOMPUTE_LIBRARY}
+  ${OSGCUDA_LIBRARY} 
+  noise
 )
 
 #~ INSTALL(TARGETS 3DVisual DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/_INSTALL/Debug CONFIGURATIONS Debug) 
