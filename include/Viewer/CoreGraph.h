@@ -14,6 +14,7 @@
 #include <osg/Depth>
 #include <osg/TextureCubeMap>
 #include <osg/AutoTransform>
+#include <osgCuda/Computation>
 
 #include <QMap>
 #include <QLinkedList>
@@ -33,6 +34,9 @@
 #include "Data/Edge.h"
 #include "Data/Node.h"
 #include "Data/Graph.h"
+
+#include "Gpu/ResourceVisitor.h"
+#include "Gpu/LayoutModule.h"
 
 namespace Vwr
 {
@@ -272,7 +276,7 @@ namespace Vwr
 		*  osg::ref_ptr root
 		*  \brief root node
 		*/
-		osg::ref_ptr<osg::Group> root;
+		osg::ref_ptr<osgCuda::Computation> root;
 
 
 		/**

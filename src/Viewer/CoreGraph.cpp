@@ -25,7 +25,7 @@ Vwr::CoreGraph::CoreGraph(Data::Graph * graph, osg::ref_ptr<osg::Camera> camera)
 
 	appConf = Util::ApplicationConfig::get();
 
-	root = new osg::Group();
+	root = new osgCuda::Computation();
 	root->addChild(createSkyBox());
 	backgroundPosition = 0;
 
@@ -101,6 +101,14 @@ void CoreGraph::reload(Data::Graph * graph)
 
 	osgUtil::Optimizer opt;
 	opt.optimize(edgesGroup->getGroup(), osgUtil::Optimizer::CHECK_GEOMETRY);
+
+	//add layout module
+	root->removeModules();
+	root->addModule(*new Gpu::LayoutModule);
+
+	//create ResourceVisitor and apply it to root node
+	osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor;
+	visitor->apply(*root);
 }
 
 void CoreGraph::cleanUp()
