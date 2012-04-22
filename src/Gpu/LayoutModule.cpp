@@ -6,51 +6,71 @@
 #include <QDebug>
 
 extern "C"
-void computeLayout( unsigned int numBlocks, unsigned int numThreads, void* positions );
+void computeLayout(unsigned int numBlocks, 
+				   unsigned int numThreads, 
+				   void* nodes, 
+				   void* edgeIndexes, 
+				   unsigned int edgeIndexesSize, 
+				   void* edgeValues, 
+				   unsigned int edgeValuesSize);
+extern "C"
+void createExplosion( unsigned int numBlocks, unsigned int numThreads, void* nodes);
 
 bool Gpu::LayoutModule::init()
 {
-	if(!_buffer)
+	if(!_vertexBuffer || !_edgeIndexBuffer || !_edgeValueBuffer)
 	{
-        qDebug() << "[Gpu::LayoutModule::init] Memory object with positions is missing.";
+        qDebug() << "[Gpu::LayoutModule::init] Resources are missing.";
 		this->disable();
         return false;
     }
 
-	_numBlocks = _buffer->getDimension(0) / 128;
-    if( _buffer->getDimension(0) % 128 != 0 )
+	_numThreads = 128;
+	_numBlocks = _vertexBuffer->getDimension(0) / _numThreads;
+    if( _vertexBuffer->getDimension(0) % _numThreads != 0 )
 	{
 		_numBlocks+=1;
-	}
-    _numThreads = 128;
+	}    
 
 	return osgCompute::Module::init();
 }
 
 void Gpu::LayoutModule::launch()
 {	
-	computeLayout(_numBlocks, _numThreads, _buffer->map());
-	_buffer->map( osgCompute::MAP_HOST_SOURCE );
+	/*computeLayout(_numBlocks, 
+		_numThreads, 
+		_vertexBuffer->map(), 
+		_edgeIndexBuffer->map(),
+		_edgeIndexBuffer->getDimension(0),
+		_edgeValueBuffer->map(),
+		_edgeValueBuffer->getDimension(0));*/
+
+	createExplosion(_numBlocks, _numThreads, _vertexBuffer->map());
+
+	_vertexBuffer->map( osgCompute::MAP_HOST );
 }
 
 void Gpu::LayoutModule::acceptResource(osgCompute::Resource& resource)
 {
 	if( resource.isIdentifiedBy("NODE_POSITIONS") )
 	{
-		Gpu::NodePositions* positionsResource = dynamic_cast<Gpu::NodePositions*>( &resource );
-		if(NULL != positionsResource && positionsResource->_positions->size() > 0)
-		{
-			osg::ref_ptr<osg::Vec3Array> positions = positionsResource->_positions;
-			_buffer = new osgCuda::Memory;
-			_buffer->setElementSize( 3 * sizeof(float) );
-			_buffer->setDimension(0, positions->size());
+		_vertexBuffer = dynamic_cast<osgCompute::Memory*>( &resource );
+	}
 
-			memcpy(_buffer->map(osgCompute::MAP_HOST_TARGET), positions->getDataPointer(), _buffer->getByteSize());
-		}
-	}  
+	if( resource.isIdentifiedBy("EDGE_INDEXES") )
+	{
+		_edgeIndexBuffer = dynamic_cast<osgCompute::Memory*>( &resource );
+	}
+
+	if( resource.isIdentifiedBy("EDGE_VALUES") )
+	{
+		_edgeValueBuffer = dynamic_cast<osgCompute::Memory*>( &resource );
+	}
 }
 
 void Gpu::LayoutModule::clearLocal()
 {
-	_buffer = NULL;
+	_vertexBuffer = NULL;
+	_edgeIndexBuffer = NULL;
+	_edgeValueBuffer = NULL;
 }

@@ -10,6 +10,7 @@
 #include "Viewer/TextureWrapper.h"
 
 #include <osgText/FadeText>
+#include <osgCompute/Computation>
 
 typedef osg::TemplateIndexArray<unsigned int, osg::Array::UIntArrayType,4,1> ColorIndexArray;
 
@@ -21,7 +22,7 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 	this->name = name;
 	this->type = type;
 	this->targetPosition = position;
-	this->currentPosition = position * Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat();
+	this->currentPosition = new osg::Vec3(position * Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat());
 	this->graph = graph;
 	this->inDB = false;
 	this->edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge> >;
@@ -29,8 +30,6 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 	this->setBall(NULL);
 	this->setParentBall(NULL);
 	this->hasNestedNodes = false;
-
-
 
 	settings = new QMap<QString, QString>();
 	//APA
@@ -328,11 +327,11 @@ osg::Vec3f Data::Node::getCurrentPosition(bool calculateNew, float interpolation
 	//zisime aktualnu poziciu uzla v danom okamihu
 	if (calculateNew)
 	{
-		float graphScale = Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat(); 
+		/*float graphScale = Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat(); 
 
 		osg::Vec3 directionVector = osg::Vec3(targetPosition.x(), targetPosition.y(), targetPosition.z()) * graphScale - currentPosition;
-		this->currentPosition = osg::Vec3(directionVector * (usingInterpolation ? interpolationSpeed : 1) + this->currentPosition);
+		this->currentPosition = osg::Vec3(directionVector * (usingInterpolation ? interpolationSpeed : 1) + this->currentPosition);*/
 	}
 
-	return osg::Vec3(this->currentPosition); 
+	return osg::Vec3(*this->currentPosition); 
 }

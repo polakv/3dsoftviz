@@ -155,7 +155,9 @@ namespace Data
 		*  \param   val  current node position
 		*  currentPosition being set MUST BE multiplied by the graph scale
 		*/
-		void setCurrentPosition(osg::Vec3f val) { currentPosition.set(val); }
+		void setCurrentPosition(osg::Vec3f val) { currentPosition->set(val); }
+
+		void setCurrentPositionPointer(osg::Vec3f* val) { currentPosition = val; }
 
 		/**
 		*	\fn public removeAllEdges
@@ -521,10 +523,10 @@ namespace Data
 		osg::Vec3f targetPosition;
 
 		/**
-		*  osg::Vec3f currentPosition
+		*  osg::Vec3f* currentPosition
 		*  \brief node current position
 		*/
-		osg::Vec3f currentPosition;
+		osg::Vec3f* currentPosition;
 
 		/**
 		*  osg::Sphere nested ball

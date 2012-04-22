@@ -6,35 +6,12 @@
 #define GPU_RESOURCEVISITOR_DEF 1
 
 #include <vector>
-#include <osgCompute/Resource>
+#include <QMap>
 #include <osgCompute/Visitor>
+#include <osgCompute/Memory>
 
 namespace Gpu
 {
-	/**
-	*  \class NodePositions
-	*  \brief Resource that stores position of nodes.
-	*  \author Vladimir Polak
-	*  \date 18. 3. 2012
-	*/
-
-	class NodePositions : public osgCompute::Resource
-    {
-    public:
-        NodePositions() { _positions = new osg::Vec3Array; }
-
-        META_Object(Gpu,NodePositions)
-
-		osg::ref_ptr<osg::Vec3Array> _positions;
-
-    protected:
-        virtual ~NodePositions() {}
-
-    private:
-        NodePositions(const NodePositions&, const osg::CopyOp& ) {} 
-        inline NodePositions &operator=(const NodePositions &) { return *this; }
-    };
-
 	/**
 	*  \class ResourceVisitor
 	*  \brief Custom resource visitor that collects node positions from transform nodes.
@@ -53,14 +30,21 @@ namespace Gpu
 			*  \param node a reference to the current node
 			*/
 		virtual void collect( osg::Node& node );
+		virtual void distribute( osg::Node& node );
+		virtual void exchange( osg::Node& node );
 
 	protected:
 		virtual ~ResourceVisitor() {clearLocal();}
 
     private:
-		osg::ref_ptr<NodePositions> _positionsResource;
-
 		void clearLocal();
+		void addPositionResource();
+
+		unsigned int								_nodeCount;
+		osg::ref_ptr<osgCompute::Memory>			_vertexBuffer;
+		QMap<qlonglong, unsigned int>*				_vertexBufferOffsets;
+		std::vector<unsigned int>*					_edgeIndexes;
+		std::vector<unsigned int>*					_edgeValues;
 
         ResourceVisitor(const ResourceVisitor&, const osg::CopyOp& ) {} 
         inline ResourceVisitor &operator=(const ResourceVisitor &) { return *this; }
