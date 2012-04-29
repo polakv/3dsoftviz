@@ -9,6 +9,8 @@
 #include <QMap>
 #include <osgCompute/Visitor>
 #include <osgCompute/Memory>
+#include "Data/Node.h"
+#include "Data/Edge.h"
 
 namespace Gpu
 {
@@ -39,12 +41,13 @@ namespace Gpu
     private:
 		void clearLocal();
 		void addPositionResource();
+		osg::Vec3f getRandomLocation();
+		double getRandomDouble();
 
 		unsigned int								_nodeCount;
 		osg::ref_ptr<osgCompute::Memory>			_vertexBuffer;
-		QMap<qlonglong, unsigned int>*				_vertexBufferOffsets;
-		std::vector<unsigned int>*					_edgeIndexes;
-		std::vector<unsigned int>*					_edgeValues;
+		QMap<qlonglong, unsigned int>*				_vertexOffsets;
+		QMap<qlonglong, osg::ref_ptr<Data::Edge>>*	_edges;
 
         ResourceVisitor(const ResourceVisitor&, const osg::CopyOp& ) {} 
         inline ResourceVisitor &operator=(const ResourceVisitor &) { return *this; }

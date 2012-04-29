@@ -42,8 +42,7 @@ namespace Gpu
         unsigned int                        _numThreads;
 
 		osg::ref_ptr<osgCompute::Memory>		_vertexBuffer;
-		osg::ref_ptr<osgCompute::Memory>		_edgeIndexBuffer;
-		osg::ref_ptr<osgCompute::Memory>		_edgeValueBuffer;
+		osg::ref_ptr<osgCompute::Memory>		_edgeBuffer;
 
     private:
         LayoutModule(const LayoutModule&, const osg::CopyOp& ) {} 
