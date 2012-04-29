@@ -81,7 +81,7 @@ FIND_PACKAGE(OpenSceneGraph COMPONENTS
 MESSAGE ("osg libraries:: ${OPENSCENEGRAPH_LIBRARIES}")
 
 # set specific argument to nvcc compiler for paralel nsight debugging
-SET (CUDA_NVCC_USER_OPTIONS "-G0 -arch sm_10" CACHE	STRING "Set additional user specific compiler options to Cuda nvcc")
+SET (CUDA_NVCC_USER_OPTIONS "-G0 -arch sm_20" CACHE	STRING "Set additional user specific compiler options to Cuda nvcc")
 
 # Find Cuda
 FIND_PACKAGE(Cuda)
