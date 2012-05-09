@@ -378,15 +378,19 @@ void CoreWindow::playPause()
 	{
 		play->setIcon(QIcon("img/gui/play.png"));
 		isPlaying = 0;
-		layout->pause();
 		coreGraph->setNodesFreezed(true);
+		coreGraph->getComputeNode()->disable();
+		
+		//layout->pause();
 	}
 	else
 	{
 		play->setIcon(QIcon("img/gui/pause.png"));
 		isPlaying = 1;
 		coreGraph->setNodesFreezed(false);
-		layout->play();
+		coreGraph->getComputeNode()->enable();
+
+		//layout->play();
 	}
 }
 

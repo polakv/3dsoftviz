@@ -60,8 +60,8 @@ void AppCore::Core::restartLayout()
     this->thr = new Layout::LayoutThread(this->alg);
     this->cw->setLayoutThread(thr);
     this->cg->reload(Manager::GraphManager::getInstance()->getActiveGraph());
-    this->thr->start();
-    this->thr->play();
+    //this->thr->start();
+    //this->thr->play();
     this->messageWindows->closeLoadingDialog();
 }
 

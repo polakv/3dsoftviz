@@ -9,12 +9,13 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NUM_REPULSE_THREADS 32
-#define NUM_ATTRACT_THREADS 32
+#define NUM_THREADS 256
 
 __constant__ float calmEdgeLength;
 __constant__ float alpha = 0.005;
+__constant__ float minMovement = 0.05;
 __constant__ float maxMovement = 30;
+__constant__ float stiffness = 0.7;
 
 texture<float4, cudaTextureType1D, cudaReadModeElementType> texVertices;
 texture<uint2, cudaTextureType1D, cudaReadModeElementType> texEdges;
@@ -59,12 +60,12 @@ float3 vertexVertexRepulsion(float4 u, float4 v, float3 fv)
 }
 
 inline __device__ 
-float3 tile_calculation(float4 vertexPosition, float3 fv)  
+float3 tile_calculation(float4 vertexPosition, float3 fv, unsigned int arrayBound)  
 {   
 	extern __shared__ float4 shPosition[];
-	for (int i = 0; i < blockDim.x; i++) 
+	for (int i = 0; i < arrayBound; i++) 
 	{  
-		fv = vertexVertexRepulsion(vertexPosition, shPosition[i], fv);  
+		fv = vertexVertexRepulsion(vertexPosition, shPosition[i], fv); 
 	}  
 	return fv;  
 }
@@ -99,28 +100,37 @@ float3 edgeAttraction(float4 u, float4 v)
 __global__
 void repulseKernel( float4* vertices, float4* forceVectors, unsigned int numVertices )
 {
-    extern __shared__ float4 shPosition[];  
+	int vertexIdx = blockIdx.x * blockDim.x + threadIdx.x; 
+	if(vertexIdx >= numVertices)
+	{
+		return; 
+	}
 
-	int vertexId = blockIdx.x * blockDim.x + threadIdx.x;  
-	float4 vertexPosition = vertices[vertexId];  
+	extern __shared__ float4 shPosition[]; 
+	float4 vertexPosition = vertices[vertexIdx];  
 	float3 fv = {0.0f, 0.0f, 0.0f};
-	for (int i = 0, tile = 0; i < numVertices; i += NUM_REPULSE_THREADS, tile++) 
+	for (int i = 0, tile = 0; i < numVertices; i += blockDim.x, tile++) 
 	{  
 		int idx = tile * blockDim.x + threadIdx.x;  
-		shPosition[threadIdx.x] = vertices[idx];  
+		shPosition[threadIdx.x] = vertices[idx];
 		__syncthreads();  
-		fv = tile_calculation(vertexPosition, fv);  
+		unsigned int arrayBound = (numVertices - tile * blockDim.x) > blockDim.x ? blockDim.x : (numVertices - tile * blockDim.x);
+		fv = tile_calculation(vertexPosition, fv, arrayBound);  
 		__syncthreads();  
 	}  
-	// save the result in global memory for the integration step.  
-	forceVectors[vertexId] = make_float4(fv.x, fv.y, fv.z, 0.0f);
+	// save the result in global memory for apply kernel  
+	forceVectors[vertexIdx] = make_float4(fv.x, fv.y, fv.z, 0.0f);
 }
 
 __global__
-void attractKernel( float4* forceVectors )
+void attractKernel( float4* forceVectors, unsigned int numEdges )
 {
-	//TODO: what happend if edge idx is out of range
     unsigned int edgeIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	if(edgeIdx >= numEdges)
+	{
+		return; 
+	}
+
 	uint2 edge = tex1Dfetch(texEdges, edgeIdx);
 
 	float4 u = tex1Dfetch(texVertices, edge.x);
@@ -132,39 +142,33 @@ void attractKernel( float4* forceVectors )
 	atomicAdd(&(forceVectors[edge.x].y), fv.y);
 	atomicAdd(&(forceVectors[edge.x].z), fv.z);
 
-	atomicAdd(&(forceVectors[edge.y].x), 0 - fv.x);
-	atomicAdd(&(forceVectors[edge.y].y), 0 - fv.y);
-	atomicAdd(&(forceVectors[edge.y].z), 0 - fv.z);
+	atomicAdd(&(forceVectors[edge.y].x), fv.x * -1);
+	atomicAdd(&(forceVectors[edge.y].y), fv.y * -1);
+	atomicAdd(&(forceVectors[edge.y].z), fv.z * -1);
 
 }
 
 __global__
-void applyKernel( float4* vertices )
+void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities )
 {
 	unsigned int vertexIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	if(vertexIdx >= numVertices)
+	{
+		return; 
+	}
+
 	float4 force = tex1Dfetch(texForces, vertexIdx) * alpha;
 	float length = sqrtf((force.x * force.x) + (force.y * force.y) + (force.z * force.z));
 
-	if(length > maxMovement)
-	{
-		force.x = force.x / length;
-		force.y = force.y / length;
-		force.z = force.z / length;
-		force = force * 5;
-	}
+	force.x = force.x / length;
+	force.y = force.y / length;
+	force.z = force.z / length;
+	
+	float optimalLength = length < maxMovement ?  length :  maxMovement;
+	force = force * optimalLength;
 
-	vertices[vertexIdx] = vertices[vertexIdx] + force;
-}
-
-__global__
-void explosionKernel( float4* nodes )
-{
-    unsigned int ptclIdx = blockDim.x * blockIdx.x + threadIdx.x;
-
-	float4 node =  nodes[ptclIdx];
-	float length = sqrtf(powf(node.x,2) + powf(node.y,2) + powf(node.z,2));
-  
-	nodes[ptclIdx] = node + make_float4(node.x / length, node.y / length, node.z / length, 0.0f);
+	vertices[vertexIdx] = vertices[vertexIdx] + force + velocities[vertexIdx];
+	velocities[vertexIdx] = force * stiffness;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,94 +176,19 @@ void explosionKernel( float4* nodes )
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
 
-void checkCudaError(const char* message);
-float computeCalm(unsigned int numVertices, float sizeFactor);
-
-extern "C" __host__
-void initKernelConstants(unsigned int numVertices, float sizeFactor)
-{
-	float calmEdgeLength = computeCalm(numVertices, sizeFactor);
-	cudaMemcpyToSymbol("calmEdgeLength", &calmEdgeLength, sizeof(float));
-}
-
 float computeCalm(unsigned int numVertices, float sizeFactor)
 {
-	float R = 30;
+	float R = 300;
 	float PI = acos((float) - 1);
 
 	return sizeFactor * pow((4 * PI * R * R * R)/(numVertices * 3), (float) 1/3);
 }
 
 extern "C" __host__
-void computeLayout(void* vertexBuffer, unsigned int vertexBufferSize,
-				   void* edgeBuffer, unsigned int edgeBufferSize)
+void initKernelConstants(unsigned int numVertices, float sizeFactor)
 {
-	//init
-	unsigned int numBlocks, numThreads;
-	dim3 blocks, threads;
-
-	float4* forceVectorBuffer;
-	size_t forceVectorSize = vertexBufferSize * sizeof(float4);
-	cudaMalloc(&forceVectorBuffer, forceVectorSize);
-
-
-	//repulse kernel
-    numThreads = NUM_REPULSE_THREADS;
-	numBlocks = (unsigned int) ceil((float) vertexBufferSize / (float) numThreads);
-	unsigned int sharedMemSize = numThreads * sizeof(float4);
-
-	//printf("Repulse - blocks: %d threads: %d\n", numBlocks, numThreads);
-	
-	blocks = dim3( numBlocks, 1, 1 );
-	threads = dim3( numThreads, 1, 1 );
-
-    repulseKernel<<< blocks, threads, sharedMemSize >>>(reinterpret_cast<float4*>(vertexBuffer), forceVectorBuffer, vertexBufferSize);
-
-	//attract kernel
-	numThreads = NUM_ATTRACT_THREADS;
-	numBlocks = (unsigned int) ceil((float) edgeBufferSize / (float) (numThreads * 2));
-
-	//printf("Attract - blocks: %d threads: %d\n", numBlocks, numThreads);
-
-	blocks = dim3( numBlocks, 1, 1 );
-	threads = dim3( numThreads, 1, 1 );
-
-	cudaBindTexture(0, texVertices, reinterpret_cast<float4*>(vertexBuffer), vertexBufferSize * sizeof(float4));
-	cudaBindTexture(0, texEdges, reinterpret_cast<uint2*>(edgeBuffer), (edgeBufferSize / 2) * sizeof(uint2));
-
-	attractKernel<<< blocks, threads >>>(forceVectorBuffer);
-
-	cudaUnbindTexture(texVertices);
-	cudaUnbindTexture(texEdges);
-
-	//apply forces
-	numThreads = NUM_REPULSE_THREADS;
-	numBlocks = (unsigned int) ceil((float) vertexBufferSize / (float) numThreads);
-
-	//printf("Apply - blocks: %d threads: %d\n", numBlocks, numThreads);
-	
-	blocks = dim3( numBlocks, 1, 1 );
-	threads = dim3( numThreads, 1, 1 );
-
-	cudaBindTexture(0, texForces, reinterpret_cast<float4*>(forceVectorBuffer), vertexBufferSize * sizeof(float4));
-
-    applyKernel<<< blocks, threads >>>(reinterpret_cast<float4*>(vertexBuffer));
-
-	cudaUnbindTexture(texForces);
-
-	checkCudaError("Kernel Execution Failed!");
-}
-
-extern "C" __host__
-void createExplosion(void* nodes, unsigned int numNodes)
-{
-	unsigned int numThreads = 128;
-	unsigned int numBlocks = (unsigned int) ceil((float) numNodes / (float) numThreads);
-	
-    dim3 blocks( numBlocks, 1, 1 );
-    dim3 threads( numThreads, 1, 1 );
-
-    explosionKernel<<< blocks, threads >>>(reinterpret_cast<float4*>(nodes));
+	float calmEdgeLength = computeCalm(numVertices, sizeFactor);
+	cudaMemcpyToSymbol("calmEdgeLength", &calmEdgeLength, sizeof(float));
 }
 
 void checkCudaError(const char* message) 
@@ -270,6 +199,62 @@ void checkCudaError(const char* message)
 		fprintf(stderr, "CUDA error. %s. %s.\n", message, cudaGetErrorString(error));
 		exit(EXIT_FAILURE);
 	}
+}
+
+extern "C" __host__
+void computeLayout(void* vertexBuffer, unsigned int vertexBufferSize, void* velocityBuffer,
+				   void* edgeBuffer, unsigned int edgeBufferSize)
+{
+	//init
+	unsigned int numBlocks, numThreads;
+	dim3 blocks, threads;
+
+	float4* forceVectorBuffer;
+	size_t forceVectorSize = vertexBufferSize * sizeof(float4);
+	cudaMalloc(&forceVectorBuffer, forceVectorSize);
+
+	//repulse kernel
+    numThreads = NUM_THREADS;
+	numBlocks = (unsigned int) ceil((float) vertexBufferSize / (float) numThreads);
+	unsigned int sharedMemSize = numThreads * sizeof(float4);
+	
+	blocks = dim3( numBlocks, 1, 1 );
+	threads = dim3( numThreads, 1, 1 );
+
+    repulseKernel<<< blocks, threads, sharedMemSize >>>(reinterpret_cast<float4*>(vertexBuffer), forceVectorBuffer, vertexBufferSize);
+
+	//attract kernel
+	unsigned int numEdges = edgeBufferSize / 2;
+	numThreads = NUM_THREADS;
+	numBlocks = (unsigned int) ceil((float) numEdges / (float) numThreads);
+
+	blocks = dim3( numBlocks, 1, 1 );
+	threads = dim3( numThreads, 1, 1 );
+
+	cudaBindTexture(0, texVertices, reinterpret_cast<float4*>(vertexBuffer), vertexBufferSize * sizeof(float4));
+	cudaBindTexture(0, texEdges, reinterpret_cast<uint2*>(edgeBuffer), numEdges * sizeof(uint2));
+
+	attractKernel<<< blocks, threads >>>(forceVectorBuffer, numEdges);
+
+	cudaUnbindTexture(texVertices);
+	cudaUnbindTexture(texEdges);
+
+	//apply forces
+	numThreads = NUM_THREADS;
+	numBlocks = (unsigned int) ceil((float) vertexBufferSize / (float) numThreads);
+	
+	blocks = dim3( numBlocks, 1, 1 );
+	threads = dim3( numThreads, 1, 1 );
+
+	cudaBindTexture(0, texForces, reinterpret_cast<float4*>(forceVectorBuffer), vertexBufferSize * sizeof(float4));
+
+    applyKernel<<< blocks, threads >>>(reinterpret_cast<float4*>(vertexBuffer), vertexBufferSize, reinterpret_cast<float4*>(velocityBuffer));
+
+	cudaUnbindTexture(texForces);
+
+	//cleanup
+	cudaFree(forceVectorBuffer);
+	checkCudaError("Kernel Execution Failed!");
 }
 
 #endif

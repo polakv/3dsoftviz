@@ -119,6 +119,16 @@ namespace Vwr
 		 */
 		osg::ref_ptr<osg::Group> const getScene()  { return root; }
 
+		/*!
+		 * \brief
+		 * Metoda, ktora vracia hlavny vypoctovy uzol sceny - root.
+		 * 
+		 * \returns
+		 * vrati odkaz na hlavny vypoctovy uzol 
+		 * 
+		 */
+		osg::ref_ptr<osgCompute::Computation> const getComputeNode()  { return root; }
+
 
 		/**
 		*  \fn inline public  setCamera(osg::ref_ptr<osg::Camera> camera)
@@ -276,7 +286,7 @@ namespace Vwr
 		*  osg::ref_ptr<osgCuda::Computation> root
 		*  \brief root node
 		*/
-		osg::ref_ptr<osgCuda::Computation> root;
+		osg::ref_ptr<osgCuda::Computation>	root;
 
 		/**
 		*  bool nodesFreezed

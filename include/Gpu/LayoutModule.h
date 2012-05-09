@@ -34,6 +34,7 @@ namespace Gpu
         virtual void acceptResource( osgCompute::Resource& resource );
 
         virtual void clear() { clearLocal(); osgCompute::Module::clear(); }
+
     protected:
 		virtual ~LayoutModule() { clearLocal(); }
         void clearLocal();
@@ -41,8 +42,9 @@ namespace Gpu
 		unsigned int                        _numBlocks;
         unsigned int                        _numThreads;
 
-		osg::ref_ptr<osgCompute::Memory>		_vertexBuffer;
-		osg::ref_ptr<osgCompute::Memory>		_edgeBuffer;
+		osg::ref_ptr<osgCompute::Memory>	_vertexBuffer;
+		osg::ref_ptr<osgCompute::Memory>	_velocityBuffer;
+		osg::ref_ptr<osgCompute::Memory>	_edgeBuffer;
 
     private:
         LayoutModule(const LayoutModule&, const osg::CopyOp& ) {} 
