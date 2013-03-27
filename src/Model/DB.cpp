@@ -10,13 +10,13 @@ Model::DB::DB()
 	//vytvorenie DB connection
     this->appConf = Util::ApplicationConfig::get();
     
-    DB::openConnection(
+    /*DB::openConnection(
     	appConf->getValue("Model.DB.HostName"),
         appConf->getValue("Model.DB.DbName"),
         appConf->getValue("Model.DB.UserName"),
         appConf->getValue("Model.DB.Pass"),
         appConf->getBoolValue("Model.DB.RequireSSL", true)
-    );
+    );*/
 }
 
 Model::DB::~DB()

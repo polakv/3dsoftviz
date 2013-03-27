@@ -9,7 +9,7 @@
 #include <math.h>
 #include <stdio.h>
 
-#define NUM_THREADS 256
+#define NUM_THREADS 256 
 
 __constant__ float calmEdgeLength;
 __constant__ float alpha = 0.005;
@@ -25,19 +25,19 @@ texture<float4, cudaTextureType1D, cudaReadModeElementType> texForces;
 // DEVICE FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-inline __device__ 
+__device__ 
 float4 operator+(float4 a, float4 b)
 {
     return make_float4(a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w);
 }
 
-inline __device__ 
+__device__ 
 float4 operator*(float4 a, float b)
 {
     return make_float4(a.x * b, a.y * b, a.z * b, a.w * b);
 }
 
-inline __device__ 
+__device__
 float3 vertexVertexRepulsion(float4 u, float4 v, float3 fv)
 {
 	float3 r;  
@@ -59,18 +59,19 @@ float3 vertexVertexRepulsion(float4 u, float4 v, float3 fv)
 	return fv;  
 }
 
-inline __device__ 
+__device__
 float3 tile_calculation(float4 vertexPosition, float3 fv, unsigned int arrayBound)  
 {   
 	extern __shared__ float4 shPosition[];
-	for (int i = 0; i < arrayBound; i++) 
+	#pragma unroll 32
+	for (unsigned int i = 0; i < arrayBound; i++) 
 	{  
 		fv = vertexVertexRepulsion(vertexPosition, shPosition[i], fv); 
 	}  
 	return fv;  
 }
 
-inline __device__ 
+__device__
 float3 edgeAttraction(float4 u, float4 v)
 {
 	float3 fv;  
@@ -89,7 +90,7 @@ float3 edgeAttraction(float4 u, float4 v)
 	fv.y = fv.y * attrForce;  
 	fv.z = fv.z * attrForce;
 
-	return fv;  
+	return fv;
 }
 
 
@@ -97,7 +98,7 @@ float3 edgeAttraction(float4 u, float4 v)
 // GLOBAL FUNCTIONS //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //------------------------------------------------------------------------------
-__global__
+__global__ 
 void repulseKernel( float4* vertices, float4* forceVectors, unsigned int numVertices )
 {
 	int vertexIdx = blockIdx.x * blockDim.x + threadIdx.x; 
@@ -109,10 +110,9 @@ void repulseKernel( float4* vertices, float4* forceVectors, unsigned int numVert
 	extern __shared__ float4 shPosition[]; 
 	float4 vertexPosition = vertices[vertexIdx];  
 	float3 fv = {0.0f, 0.0f, 0.0f};
-	for (int i = 0, tile = 0; i < numVertices; i += blockDim.x, tile++) 
-	{  
-		int idx = tile * blockDim.x + threadIdx.x;  
-		shPosition[threadIdx.x] = vertices[idx];
+	for (int tile = 0; tile * blockDim.x < numVertices; tile++) 
+	{
+		shPosition[threadIdx.x] = tile * blockDim.x + threadIdx.x < numVertices ? vertices[tile * blockDim.x + threadIdx.x] : vertexPosition;
 		__syncthreads();  
 		unsigned int arrayBound = (numVertices - tile * blockDim.x) > blockDim.x ? blockDim.x : (numVertices - tile * blockDim.x);
 		fv = tile_calculation(vertexPosition, fv, arrayBound);  
@@ -165,9 +165,9 @@ void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities
 	force.z = force.z / length;
 	
 	float optimalLength = length < maxMovement ?  length :  maxMovement;
-	force = force * optimalLength;
+	force = force * optimalLength + velocities[vertexIdx];
 
-	vertices[vertexIdx] = vertices[vertexIdx] + force + velocities[vertexIdx];
+	vertices[vertexIdx] = vertices[vertexIdx] + force;
 	velocities[vertexIdx] = force * stiffness;
 }
 
@@ -189,6 +189,7 @@ void initKernelConstants(unsigned int numVertices, float sizeFactor)
 {
 	float calmEdgeLength = computeCalm(numVertices, sizeFactor);
 	cudaMemcpyToSymbol("calmEdgeLength", &calmEdgeLength, sizeof(float));
+	//cudaFuncSetCacheConfig(repulseKernel, cudaFuncCachePreferL1);
 }
 
 void checkCudaError(const char* message) 
