@@ -24,7 +24,7 @@ namespace Gpu
 	{
 	public:
 
-		ResourceVisitor();
+		ResourceVisitor(bool randomize = false);
 	  
 		/**
 			*  \fn public  collect(osg::Node& node)
@@ -47,7 +47,8 @@ namespace Gpu
 		unsigned int								_nodeCount;
 		osg::ref_ptr<osgCompute::Memory>			_vertexBuffer;
 		QMap<qlonglong, unsigned int>*				_vertexOffsets;
-		QMap<qlonglong, osg::ref_ptr<Data::Edge>>*	_edges;
+        QMap<qlonglong, osg::ref_ptr<Data::Edge> >*	_edges;
+		bool										_randomize;
 
         ResourceVisitor(const ResourceVisitor&, const osg::CopyOp& ) {} 
         inline ResourceVisitor &operator=(const ResourceVisitor &) { return *this; }

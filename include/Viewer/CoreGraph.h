@@ -183,6 +183,8 @@ namespace Vwr
 			qmetaNodesGroup->freezeNodePositions();
 		}
 
+		void applyResourceVisitor();
+
 	private:
 
 		/**

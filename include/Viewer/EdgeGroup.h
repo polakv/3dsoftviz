@@ -51,7 +51,7 @@ namespace Vwr
 		*  \fn public  synchronizeEdges
 		*  \brief synchronizes drawn edges with wrapped edge map
 		*/
-		void synchronizeEdges();
+		bool synchronizeEdges();
 
 
 		/**

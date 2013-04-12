@@ -1,4 +1,5 @@
 #include "Viewer/CoreGraph.h"
+#include "Manager/Manager.h"
 #include <osgUtil/Optimizer>
 
 using namespace Vwr;
@@ -107,6 +108,12 @@ void CoreGraph::reload(Data::Graph * graph)
 	opt.optimize(edgesGroup->getGroup(), osgUtil::Optimizer::CHECK_GEOMETRY);
 
 	//apply resource visitor to root node	
+	osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor(true);
+	visitor->apply(*root);
+}
+
+void CoreGraph::applyResourceVisitor()
+{
 	osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor();
 	visitor->apply(*root);
 }
@@ -127,7 +134,7 @@ void CoreGraph::cleanUp()
 	delete edgesGroup;
 
 	//reset all compute modules and remove resources
-	std::vector<osg::ref_ptr<osgCompute::Module>>::iterator itr;
+    std::vector<osg::ref_ptr<osgCompute::Module> >::iterator itr;
 	for(itr = root->getModules().begin(); itr != root->getModules().end(); itr++)
 	{
 		itr->get()->clear();
@@ -224,19 +231,8 @@ void CoreGraph::update()
 
 	synchronize();
 
-	float graphScale = appConf->getValue("Viewer.Display.NodeDistanceScale").toFloat();
-	
-	if (!this->nodesFreezed)
-	{
-		float interpolationSpeed = appConf->getValue("Viewer.Display.InterpolationSpeed").toFloat();
-		nodesGroup->updateNodeCoordinates(interpolationSpeed);
-		qmetaNodesGroup->updateNodeCoordinates(interpolationSpeed);
-	}
-	else
-	{
-		nodesGroup->updateNodeCoordinates(1);
-		qmetaNodesGroup->updateNodeCoordinates(1);
-	}
+	nodesGroup->updateNodeCoordinates(this->nodesFreezed);
+	qmetaNodesGroup->updateNodeCoordinates(this->nodesFreezed);
 
 	edgesGroup->updateEdgeCoords();	
 	qmetaEdgesGroup->updateEdgeCoords();
@@ -245,10 +241,9 @@ void CoreGraph::update()
 
 void CoreGraph::synchronize()
 {
-	nodesGroup->synchronizeNodes();
-	edgesGroup->synchronizeEdges();
-	qmetaNodesGroup->synchronizeNodes();
-	qmetaEdgesGroup->synchronizeEdges();
+	bool changed = nodesGroup->synchronizeNodes() || edgesGroup->synchronizeEdges() || qmetaNodesGroup->synchronizeNodes() || qmetaEdgesGroup->synchronizeEdges();
+	if(changed)
+		this->applyResourceVisitor();
 }
 
 void CoreGraph::setEdgeLabelsVisible(bool visible)

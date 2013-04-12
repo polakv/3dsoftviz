@@ -141,8 +141,9 @@ void EdgeGroup::getEdgeCoordinatesAndColors(osg::ref_ptr<Data::Edge> edge, int f
 		colors->push_back(edge->getEdgeColor());
 }
 
-void EdgeGroup::synchronizeEdges()
+bool EdgeGroup::synchronizeEdges()
 {
+	bool changed = false;
 	QList<qlonglong> edgeKeys = edges->keys();
 
 	for (int i = 0; i < 2; i++)
@@ -157,6 +158,7 @@ void EdgeGroup::synchronizeEdges()
 			if (!edgeKeys.contains(e->getId()))
 			{
 				geometry->removePrimitiveSet(geometry->getPrimitiveSetIndex((e)));
+				changed = changed || true;
 			}
 		}
 	}
@@ -166,12 +168,20 @@ void EdgeGroup::synchronizeEdges()
 	while (ie != edges->end()) 
 	{
 		if (!(*ie)->isOriented() && geometry->getPrimitiveSetIndex((*ie)) == geometry->getNumPrimitiveSets())
+		{
 			geometry->addPrimitiveSet(*ie);
+			changed = changed || true;
+		}
 		else if ((*ie)->isOriented() && orientedGeometry->getPrimitiveSetIndex((*ie)) == orientedGeometry->getNumPrimitiveSets())
+		{
 			orientedGeometry->addPrimitiveSet(*ie);
+			changed = changed || true;
+		}
 
 		ie++;
 	}
+
+	return changed;
 }
 
 void EdgeGroup::createEdgeStateSets()

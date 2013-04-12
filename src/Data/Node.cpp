@@ -21,8 +21,8 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
     this->id = id;
 	this->name = name;
 	this->type = type;
-	this->targetPosition = position;
-	this->currentPosition = new osg::Vec3(position * Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat());
+    this->targetPosition = new osg::Vec3(position);
+    this->currentPosition = position * Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat();
 	this->graph = graph;
 	this->inDB = false;
 	this->edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge> >;
@@ -57,12 +57,14 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 
 	this->force = osg::Vec3f();
 	this->velocity = osg::Vec3f(0,0,0);
-	this->fixed = false;
 	this->ignore = false;
 	this->positionCanBeRestricted = true;
 	this->removableByUser = true;
 	this->selected = false;
 	this->usingInterpolation = true;
+
+	this->fixed = new float;
+	this->setFixed(false);
 
 	//nastavenie farebneho typu
 	float r = type->getSettings()->value("color.R").toFloat();
@@ -322,16 +324,23 @@ void Data::Node::reloadConfig()
 	square = newRect;
 }
 
-osg::Vec3f Data::Node::getCurrentPosition(bool calculateNew, float interpolationSpeed)  
+osg::Vec3f Data::Node::getCurrentPosition(bool calculateNew, bool nodesFreezed)  
 { 
 	//zisime aktualnu poziciu uzla v danom okamihu
 	if (calculateNew)
 	{
-		/*float graphScale = Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat(); 
+		if(!nodesFreezed)
+		{
+			//aplikujeme obmedzenia
+			this->setTargetPosition(graph->getRestrictionsManager().applyRestriction(*this, this->getTargetPosition()));
+		}
 
-		osg::Vec3 directionVector = osg::Vec3(targetPosition.x(), targetPosition.y(), targetPosition.z()) * graphScale - currentPosition;
-		this->currentPosition = osg::Vec3(directionVector * (usingInterpolation ? interpolationSpeed : 1) + this->currentPosition);*/
+        float graphScale = Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat();
+        osg::Vec3 directionVector = osg::Vec3(targetPosition->x(), targetPosition->y(), targetPosition->z()) * graphScale - this->currentPosition;
+
+		float interpolationSpeed = Util::ApplicationConfig::get()->getValue("Viewer.Display.InterpolationSpeed").toFloat();
+        this->currentPosition = osg::Vec3(directionVector * (usingInterpolation && !nodesFreezed ? interpolationSpeed : 1) + this->currentPosition);
 	}
 
-	return osg::Vec3(*this->currentPosition); 
+    return osg::Vec3(this->currentPosition);
 }

@@ -11,12 +11,13 @@
 #include <stdlib.h>
 #include <time.h>
 
-Gpu::ResourceVisitor::ResourceVisitor()
+Gpu::ResourceVisitor::ResourceVisitor(bool randomize)
 {	
 	_nodeCount = 0;
 	_vertexBuffer = NULL;
 	_vertexOffsets = new QMap<qlonglong, unsigned int>;	
 	_edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge>>;
+	_randomize = randomize;
 
 	srand ( time(NULL) );
 }
@@ -45,12 +46,18 @@ void Gpu::ResourceVisitor::collect(osg::Node& node)
 void Gpu::ResourceVisitor::distribute(osg::Node& node)
 {
 	this->addPositionResource();
-
+	
+	float graphScale = Util::ApplicationConfig::get()->getValue("Viewer.Display.NodeDistanceScale").toFloat();
 	Data::Node* dataNode = dynamic_cast<Data::Node*> ( &node );
 	if(NULL != dataNode && _vertexBuffer != NULL && _vertexOffsets->contains(dataNode->getId()))
 	{
-		dataNode->setCurrentPositionPointer((osg::Vec3*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4))); 	
-		dataNode->setCurrentPosition(this->getRandomLocation());
+		osg::Vec3f targetPosition = _randomize ? this->getRandomLocation() : dataNode->getTargetPosition();
+        dataNode->setTargetPositionPtr((osg::Vec3*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4)));
+		dataNode->setTargetPosition(targetPosition);
+		dataNode->setCurrentPosition(dataNode->getTargetPosition() * graphScale);
+
+        dataNode->setFixedPtr((float*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4) + sizeof(osg::Vec3)));
+		dataNode->setFixed(false);
 	}
 
 	osgCompute::ResourceVisitor::distribute(node);
@@ -58,15 +65,6 @@ void Gpu::ResourceVisitor::distribute(osg::Node& node)
 
 void Gpu::ResourceVisitor::exchange(osg::Node& node)
 {
-	this->addPositionResource();
-
-	Data::Node* dataNode = dynamic_cast<Data::Node*> ( &node );
-	if(NULL != dataNode && _vertexBuffer != NULL && _vertexOffsets->contains(dataNode->getId()))
-	{
-		dataNode->setCurrentPositionPointer((osg::Vec3*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec3)));
-		dataNode->setCurrentPosition(this->getRandomLocation());
-	}
-
 	osgCompute::ResourceVisitor::exchange(node);
 }
 
@@ -74,6 +72,7 @@ void Gpu::ResourceVisitor::addPositionResource()
 {
 	if(_vertexBuffer == NULL && _nodeCount > 0)
 	{
+
 		//vertex positions
 		_vertexBuffer = new osgCuda::Memory;
 		_vertexBuffer->addIdentifier("VERTEX_BUFFER");
@@ -130,7 +129,8 @@ void Gpu::ResourceVisitor::addPositionResource()
 			qDebug() <<  "[Gpu::ResourceVisitor::addPositionResource] Problem with creating memory object - edge values.";
 		}
 
-		qDebug() <<  "Nodes: " << _nodeCount << "Edges: " << _edges->size();
+		if(_randomize)
+			qDebug() <<  "Nodes: " << _nodeCount << "Edges: " << _edges->size();
 	}
 }
 

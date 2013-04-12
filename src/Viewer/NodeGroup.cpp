@@ -135,14 +135,16 @@ osg::ref_ptr<osg::AutoTransform> NodeGroup::wrapChild(osg::ref_ptr<Data::Node> n
 	return at;
 }
 
-void NodeGroup::synchronizeNodes()
+bool NodeGroup::synchronizeNodes()
 {	//navyse
 	int count = nodes->size ();
+    bool changed = false;
 
 	QList<qlonglong> nodeKeys = nodes->keys();
 
 	QList<qlonglong> nodeTransformsKeys = nodeTransforms->keys();
 	QSet<qlonglong> result = nodeTransformsKeys.toSet().subtract(nodeKeys.toSet());
+    changed = changed || result.size() > 0;
 
 	QSet<qlonglong>::const_iterator i = result.constBegin();
 
@@ -155,6 +157,8 @@ void NodeGroup::synchronizeNodes()
 	}
 
 	result = nodeKeys.toSet().subtract(nodeTransformsKeys.toSet());
+    changed = changed || result.size() > 0;
+
 	i = result.constBegin();
 
 	float graphScale = appConf->getValue("Viewer.Display.NodeDistanceScale").toFloat(); 
@@ -165,22 +169,22 @@ void NodeGroup::synchronizeNodes()
 		++i;
 	}
 
-
+    return changed;
 }
 
-void NodeGroup::updateNodeCoordinates(float interpolationSpeed)
+void NodeGroup::updateNodeCoordinates(bool nodesFreezed)
 {
 	QMap<qlonglong, osg::ref_ptr<Data::Node> >::const_iterator i = nodes->constBegin();
 
 	while (i != nodes->constEnd()) 
 	{
-		nodeTransforms->value(i.key())->setPosition((*i)->getCurrentPosition(true, interpolationSpeed));
+		nodeTransforms->value(i.key())->setPosition((*i)->getCurrentPosition(true, nodesFreezed));
 
 		osg::ref_ptr<osg::AutoTransform> at = NULL;
 		at = i.value()->getOutBall();
 		if(at!=NULL)
 		{
-			i.value()->getOutBall()->setPosition((*i)->getCurrentPosition(true, interpolationSpeed));
+			i.value()->getOutBall()->setPosition((*i)->getCurrentPosition(true, nodesFreezed));
 		}
 
 		++i;

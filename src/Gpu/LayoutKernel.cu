@@ -154,7 +154,7 @@ void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities
 	unsigned int vertexIdx = blockDim.x * blockIdx.x + threadIdx.x;
 	if(vertexIdx >= numVertices)
 	{
-		return; 
+		return;
 	}
 
 	float4 force = tex1Dfetch(texForces, vertexIdx) * alpha;
@@ -165,7 +165,7 @@ void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities
 	force.z = force.z / length;
 	
 	float optimalLength = length < maxMovement ?  length :  maxMovement;
-	force = force * optimalLength + velocities[vertexIdx];
+	force = (force * optimalLength + velocities[vertexIdx]) * vertices[vertexIdx].w;
 
 	vertices[vertexIdx] = vertices[vertexIdx] + force;
 	velocities[vertexIdx] = force * stiffness;

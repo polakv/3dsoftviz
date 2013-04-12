@@ -128,7 +128,7 @@ namespace Data
 		*  \return osg::Vec3f node position
 		*  returned targetPosition IS NOT multiplied by the graph scale
 		*/
-		osg::Vec3f getTargetPosition() const { return osg::Vec3(targetPosition); }
+        osg::Vec3f getTargetPosition() const { return osg::Vec3(*targetPosition); }
 
 		/**
 		*  \fn inline public  setTargetPosition(osg::Vec3f val)
@@ -136,7 +136,9 @@ namespace Data
 		*  \param      val   new position
 		*  targetPosition being set MUST NOT BE multiplied by the graph scale
 		*/
-		void setTargetPosition(osg::Vec3f val) { targetPosition.set(val); }
+        void setTargetPosition(osg::Vec3f val) { targetPosition->set(val); }
+
+        void setTargetPositionPtr(osg::Vec3f* val) { targetPosition = val; }
 
 
 		/**
@@ -147,7 +149,7 @@ namespace Data
 		*  \return osg::Vec3f actual position
 		*  returned currentPosition IS already multiplied by the graph scale
 		*/
-		osg::Vec3f getCurrentPosition(bool calculateNew = false, float interpolationSpeed = 1.0f);
+		osg::Vec3f getCurrentPosition(bool calculateNew = false, bool nodesFreezed = true);
 
 		/**
 		*  \fn inline public  setCurrentPosition(osg::Vec3f val) 
@@ -155,9 +157,7 @@ namespace Data
 		*  \param   val  current node position
 		*  currentPosition being set MUST BE multiplied by the graph scale
 		*/
-		void setCurrentPosition(osg::Vec3f val) { currentPosition->set(val); }
-
-		void setCurrentPositionPointer(osg::Vec3f* val) { currentPosition = val; }
+        void setCurrentPosition(osg::Vec3f val) { currentPosition.set(val); }
 
 		/**
 		*	\fn public removeAllEdges
@@ -245,11 +245,11 @@ namespace Data
 		*/
 		void setFixed(bool fixed) 
 		{ 
-			this->fixed = fixed; 
+			*(this->fixed) = this->type->isMeta() || fixed ? 0.0f : 1.0f;
 
-			if (fixed && !this->containsDrawable(square))
+            if (fixed && !this->type->isMeta() && !this->containsDrawable(square))
 				this->addDrawable(square);
-			else if (!fixed)
+            else if (!fixed && this->containsDrawable(square))
 				this->removeDrawable(square);
 		}
 
@@ -258,7 +258,9 @@ namespace Data
 		*  \brief Returns if the Node is fixed
 		*  \return bool true, if the Node is fixed
 		*/
-		bool isFixed() const { return fixed; }
+        bool isFixed() { return *(this->fixed) == 0; }
+
+        void setFixedPtr(float* fixed) { this->fixed = fixed; }
 		
 		/**
 		*  \fn inline public  setSelected(bool selected) 
@@ -355,7 +357,7 @@ namespace Data
 		QString toString() const 
 		{
             QString str;
-            QTextStream(&str) << "node id:" << id << " name:" << name << " pos:[" << targetPosition.x() << "," << targetPosition.y() << "," << targetPosition.z() << "]";
+            QTextStream(&str) << "node id:" << id << " name:" << name << " pos:[" << targetPosition->x() << "," << targetPosition->y() << "," << targetPosition->z() << "]";
             return str;
         }
 
@@ -520,13 +522,13 @@ namespace Data
 		*  osg::Vec3f targetPosition
 		*  \brief node target position
 		*/
-		osg::Vec3f targetPosition;
+        osg::Vec3f* targetPosition;
 
 		/**
 		*  osg::Vec3f* currentPosition
 		*  \brief node current position
 		*/
-		osg::Vec3f* currentPosition;
+        osg::Vec3f currentPosition;
 
 		/**
 		*  osg::Sphere nested ball
@@ -562,7 +564,7 @@ namespace Data
 		*  bool fixed
 		*  \brief node fixed state
 		*/
-		bool fixed;
+        float * fixed;
 
 		bool hasNestedNodes;
 

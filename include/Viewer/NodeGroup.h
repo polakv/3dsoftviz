@@ -46,13 +46,13 @@ namespace Vwr
 		*  \brief Updates nodes current position with given interpolation speed
 		*  \param       interpolationSpeed     
 		*/
-		void updateNodeCoordinates(float interpolationSpeed);
+		void updateNodeCoordinates(bool nodesFreezed);
 
 		/**
 		*  \fn public  synchronizeNodes
 		*  \brief Synchronizes all drawn nodes with given node map
 		*/
-		void synchronizeNodes();
+        bool synchronizeNodes();
 
 		/**
 		*  \fn public  freezeNodePositions
