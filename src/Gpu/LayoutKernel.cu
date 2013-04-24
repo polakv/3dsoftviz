@@ -44,13 +44,14 @@ float3 vertexVertexRepulsion(float4 u, float4 v, float3 fv)
 	// r_uv  [3 FLOPS]  
 	r.x = v.x - u.x;  
 	r.y = v.y - u.y;  
-	r.z = v.z - u.z;  
+	r.z = v.z - u.z;
 	// distSqr = dot(r_ij, r_ij) [5 FLOPS] 
 	float distSqr = r.x * r.x + r.y * r.y + r.z * r.z;
-	// distSqr = distSqr + small number [1 FLOP] -  to avoid division by zero
-	distSqr = distSqr + 0.01f;
-	// repForce =-k^2/distSqr  [3 FLOPS (2 mul, 1 inv)]  
-	float repForce = -1.0f * calmEdgeLength * calmEdgeLength / distSqr;   
+	// repForce = -k^2/distSqr  [4 FLOPS (2 mul, 1 add, 1 inv)]  
+	float repForce = -1.0f * calmEdgeLength * calmEdgeLength / (distSqr + 0.0001f);  
+	// ignore meta nodes
+	unsigned int metaFlag = ((unsigned int) v.w) & 1;
+	repForce *= (metaFlag ^ 1);
 	// a_i =  a_i + s * r_ij [6 FLOPS]  
 	fv.x += r.x * repForce;  
 	fv.y += r.y * repForce;  
@@ -164,8 +165,11 @@ void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities
 	force.y = force.y / length;
 	force.z = force.z / length;
 	
-	float optimalLength = length < maxMovement ?  length :  maxMovement;
-	force = (force * optimalLength + velocities[vertexIdx]) * vertices[vertexIdx].w;
+	float optimalLength = length < maxMovement ?  length :  5;
+	force = (force * optimalLength) + velocities[vertexIdx];
+
+	unsigned int fixedFlag = ((unsigned int) vertices[vertexIdx].w) >> 1 & 1;
+	force = force * (fixedFlag ^ 1);
 
 	vertices[vertexIdx] = vertices[vertexIdx] + force;
 	velocities[vertexIdx] = force * stiffness;
@@ -189,7 +193,6 @@ void initKernelConstants(unsigned int numVertices, float sizeFactor)
 {
 	float calmEdgeLength = computeCalm(numVertices, sizeFactor);
 	cudaMemcpyToSymbol("calmEdgeLength", &calmEdgeLength, sizeof(float));
-	//cudaFuncSetCacheConfig(repulseKernel, cudaFuncCachePreferL1);
 }
 
 void checkCudaError(const char* message) 

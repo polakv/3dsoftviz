@@ -56,8 +56,7 @@ void Gpu::ResourceVisitor::distribute(osg::Node& node)
 		dataNode->setTargetPosition(targetPosition);
 		dataNode->setCurrentPosition(dataNode->getTargetPosition() * graphScale);
 
-        dataNode->setFixedPtr((float*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4) + sizeof(osg::Vec3)));
-		dataNode->setFixed(false);
+        dataNode->setGpuFlagsPtr((float*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4) + sizeof(osg::Vec3)));
 	}
 
 	osgCompute::ResourceVisitor::distribute(node);

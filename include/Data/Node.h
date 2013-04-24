@@ -115,7 +115,16 @@ namespace Data
 		*  \brief Sets new Type of the Node
 		*  \param   val  new Type
 		*/
-		void setType(Data::Type* val) { type = val; }
+		void setType(Data::Type* val) 
+		{ 
+			this->type = val; 
+			
+			if(this->type->isMeta())
+				*this->gpuFlags = (float) (((unsigned int) *this->gpuFlags) | Node::META_FLAG);
+			else
+				*this->gpuFlags = (float) (((unsigned int) *this->gpuFlags) & (Node::META_FLAG ^ 3));
+			this->setFixed(this->fixed);
+		}
 
 		bool isParentNode() { return hasNestedNodes; }
 
@@ -245,12 +254,17 @@ namespace Data
 		*/
 		void setFixed(bool fixed) 
 		{ 
-			*(this->fixed) = this->type->isMeta() || fixed ? 0.0f : 1.0f;
+			this->fixed = fixed;
 
             if (fixed && !this->type->isMeta() && !this->containsDrawable(square))
 				this->addDrawable(square);
             else if (!fixed && this->containsDrawable(square))
 				this->removeDrawable(square);
+
+			if(this->fixed || this->type->isMeta())
+				*this->gpuFlags = (float) (((unsigned int) *this->gpuFlags) | Node::FIXED_FLAG);
+			else
+				*this->gpuFlags = (float) (((unsigned int) *this->gpuFlags) & (Node::FIXED_FLAG ^ 3));
 		}
 
 		/**
@@ -258,9 +272,16 @@ namespace Data
 		*  \brief Returns if the Node is fixed
 		*  \return bool true, if the Node is fixed
 		*/
-        bool isFixed() { return *(this->fixed) == 0; }
+		bool isFixed() { return this->fixed; }
 
-        void setFixedPtr(float* fixed) { this->fixed = fixed; }
+        void setGpuFlagsPtr(float* ptr) 
+		{ 
+			float flagsValue = *this->gpuFlags;
+			this->gpuFlags = ptr; 
+			*this->gpuFlags = flagsValue;
+		}
+		
+		float getGpuFlags()	{ return *this->gpuFlags; }
 		
 		/**
 		*  \fn inline public  setSelected(bool selected) 
@@ -564,7 +585,7 @@ namespace Data
 		*  bool fixed
 		*  \brief node fixed state
 		*/
-        float * fixed;
+		bool fixed;
 
 		bool hasNestedNodes;
 
@@ -670,6 +691,11 @@ namespace Data
 		*  \brief Square drawable
 		*/
 		osg::ref_ptr<osg::Drawable> square;
+
+		float * gpuFlags;
+
+		static const unsigned int META_FLAG = 1;
+		static const unsigned int FIXED_FLAG = 2;
 
 	protected:
 

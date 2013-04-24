@@ -215,8 +215,9 @@ bool Model::EdgeDAO::addEdgesScaleToDB(QSqlDatabase* conn, QMap<qlonglong, osg::
 
 QSqlQuery* Model::EdgeDAO::getEdgesQuery(QSqlDatabase* conn, bool* error, qlonglong graphID, qlonglong layoutID)
 {
+	*error = FALSE;
 	QSqlQuery* query;
-    *error = FALSE;
+	query = new QSqlQuery(*conn);
 
 	//check if we have connection
     if(conn==NULL || !conn->isOpen()) 
@@ -227,7 +228,6 @@ QSqlQuery* Model::EdgeDAO::getEdgesQuery(QSqlDatabase* conn, bool* error, qlongl
     }
 
     //nacitame SELECTom hrany z DB
-    query = new QSqlQuery(*conn);
     query->prepare("SELECT * "
 		"FROM edges "
 		"WHERE graph_id = :graph_id "

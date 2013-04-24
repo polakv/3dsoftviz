@@ -58,13 +58,17 @@ Data::Node::Node(qlonglong id, QString name, Data::Type* type, float scaling, Da
 	this->force = osg::Vec3f();
 	this->velocity = osg::Vec3f(0,0,0);
 	this->ignore = false;
+	this->fixed = false;
 	this->positionCanBeRestricted = true;
 	this->removableByUser = true;
 	this->selected = false;
-	this->usingInterpolation = true;
+    this->usingInterpolation = true;
 
-	this->fixed = new float;
-	this->setFixed(false);
+	//gpu flags init
+	this->gpuFlags = new float;
+	*this->gpuFlags = 0.0f;
+	this->setType(this->type);
+	this->setFixed(this->fixed);
 
 	//nastavenie farebneho typu
 	float r = type->getSettings()->value("color.R").toFloat();
