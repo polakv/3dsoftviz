@@ -1,0 +1,203 @@
+/* osgCompute - Copyright (C) 2008-2009 SVT Group
+*                                                                     
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as
+* published by the Free Software Foundation; either version 3 of
+* the License, or (at your option) any later version.
+*                                                                     
+* This library is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of 
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Lesse General Public License for more details.
+*
+* The full license is in LICENSE file included with this distribution.
+*/
+#ifndef OSGCUDA_GEOMETRY
+#define OSGCUDA_GEOMETRY 1
+
+#include <osg/Geometry>
+#include <osgCompute/Memory>
+
+#define MAP_INDICES 0x01000000
+
+namespace osgCuda
+{
+	class GeometryMemory;
+
+	/** \enum GeometryMapping
+		Extends the Mapping enumeration (osgCompute::Mapping) for osgCompute::Memory to enable
+		mapping of indices addressing vertex data. For example with the 
+		following command a device pointer to the indices of a geometry object 
+		is returned. Indices can be mapped on the host memory as well.
+		\code
+		osg::ref_ptr<osgCompute::GLMemory> memory = new osgCuda::Geometry;
+		...
+		void* devId = memory->map( osgCompute::MAP_DEVICE_INDICES );
+		\endcode
+		This is possible only if the geometry is utilizing an index buffer, i.g. has an 
+		osg::DrawElements primitive set (see osgCuda::GeometryMapping for more details).
+		Please check mapping support with osgCompute::Memory::supportsMapping() before
+		calling map().
+	*/
+    enum GeometryMapping
+    {
+        MAP_DEVICE_INDICES          = MAP_INDICES | osgCompute::MAP_DEVICE,
+        MAP_DEVICE_TARGET_INDICES   = MAP_INDICES | osgCompute::MAP_DEVICE_TARGET,
+        MAP_DEVICE_SOURCE_INDICES   = MAP_INDICES | osgCompute::MAP_DEVICE_SOURCE,
+        MAP_HOST_INDICES            = MAP_INDICES | osgCompute::MAP_HOST,
+        MAP_HOST_TARGET_INDICES     = MAP_INDICES | osgCompute::MAP_HOST_TARGET,
+        MAP_HOST_SOURCE_INDICES     = MAP_INDICES | osgCompute::MAP_HOST_SOURCE,
+    };
+
+	/** \var GeometryMapping MAP_DEVICE_INDICES 
+		Map the indices on device memory for reading and writing.
+	*/
+	/** \var GeometryMapping MAP_DEVICE_TARGET_INDICES 
+		Map the indices on device memory for writing.
+	*/
+	/** \var GeometryMapping MAP_DEVICE_SOURCE_INDICES 
+		Map the indices on device memory for reading only access.
+	*/					
+	/** \var GeometryMapping MAP_HOST_INDICES 
+		Map the indices on host memory for reading and writing.
+	*/
+	/** \var GeometryMapping MAP_HOST_TARGET_INDICES 
+		Map the indices on host memory for writing.
+	*/		
+	/** \var ComputeOrder MAP_HOST_SOURCE_INDICES 
+		Map the indices on host memory for reading only access.
+	*/
+
+	//! Class extends osg::Geometry by CUDA functionality.
+	/** osgCuda::Geometry objects allow developers to utilize 
+	osg::Geometry objects in a CUDA environment. This class is an 
+	adapter class and provides access to a memory object which is 
+	able to map the respective vertex data (see the osgGeometry example).
+	<br />
+	\code
+	osg::ref_ptr<osgCompute::GLMemoryAdapter> memoryAdapter = new osgCuda::Geometry;
+	...
+	osg::ref_ptr<osgCompute::Memory> memory = memoryAdapter->getMemory();
+	void* devPtr = memory->map();
+	\endcode
+	<br />
+	<br />
+	The map function registers the OpenGL handle during the first call to map() (see cudaGraphicsGLRegisterBuffer()).
+	Each call to osgCompute::Memory::map( MAP_DEVICE_XXX ) will first bind the buffer to the CUDA context before
+	returning a pointer (see cudaGraphicsResourceGetMappedPointer() ).
+	The returned vertices, normals are interleaved. With OSG first all the vertex data is stored, then the
+	normals and after that the texture coordinates and so on (see osg::Geometry for further information).
+	In order to access the normals use the map function with an offset to the first normal. Its assumed 
+	that a vertex position is of size osg::Vec4f:
+	\code
+	osg::ref_ptr<osgCompute::Memory> memory = memoryAdapter->getMemory();
+	osg::Vec3f* devNrm = (osg::Vec3f*) memory->map( osgCompute::MAP_DEVICE_SOURCE, 
+					sizeof(osg::Vec4f)*memory->getNumElements() );
+	\endcode
+	Please note that a geometry cannot be mapped as DEVICE_ARRAY 
+	which would usually return a cudaArray pointer. You can check the mapping parameters
+	by calling osgCompute::Memory::supportsMapping(). A geometrie's index buffer can 
+	be mapped as well: 
+	\code
+	osg::ref_ptr<osgCompute::Memory> memory = memoryAdapter->getMemory();
+	void* devInd = memory->map( osgCompute::MAP_DEVICE_INDICES );
+	\endcode
+	Please note that this is possible only if the geometry is utilizing an index buffer, 
+	i.g. has an osg::DrawElements primitive set. Please check mapping support with 
+	osgCompute::Memory::supportsMapping() before calling map().
+    */
+    class LIBRARY_EXPORT Geometry : public osg::Geometry, public osgCompute::GLMemoryAdapter
+    {
+    public:
+		/** Constructor. 
+		*/
+        Geometry();
+
+        META_Object( osgCuda, Geometry );
+
+		/** Returns a pointer to a GLMemory object which has access to the internal 
+		OpenGL buffer handles. The memory object does the interoperability between 
+		OpenGL and CUDA.
+		@return Returns a pointer to the GL buffer resource. 
+		*/
+        virtual osgCompute::Memory* getMemory();
+
+		/** Returns a pointer to a GLMemory object which has access to the internal 
+		OpenGL buffer handles. The memory object does the interoperability between 
+		OpenGL and CUDA.
+		@return Returns a pointer to the GL buffer resource. 
+		*/
+        virtual const osgCompute::Memory* getMemory() const;
+
+		/** Adds an identifier to the GLMemory object. GLMemoryAdapters will share these identifiers 
+		with its GLMemory adaptees.
+		@param[in] identifier new string identifier of the resource.
+		*/
+		virtual void addIdentifier( const std::string& identifier );
+
+		/** Removes identifier from the GLMemory resource
+		@param[in] identifier string identifier of the resource to remove.
+		*/
+		virtual void removeIdentifier( const std::string& identifier );
+		
+		/** Returns true if the GLMemory resource is identified by the 
+		identifier.
+		@return Returns true if identifier is found. Returns false if 
+		it is not.
+		*/
+		virtual bool isIdentifiedBy( const std::string& identifier ) const;
+		
+		/** Returns all identifiers of the GLMemory resource.
+		@return Returns a reference to the list with all identifiers.
+		*/ 	
+		virtual osgCompute::IdentifierSet& getIdentifiers();
+				
+		/** Returns all identifiers of the GLMemory resource.
+		@return Returns a reference to the list with all identifiers.
+		*/ 	
+		virtual const osgCompute::IdentifierSet& getIdentifiers() const;
+
+		/** The usage hint specifies is not used for geometries as they are
+		handled as GL_SOURCE_COMPUTE_TARGET
+		@param[in] usage not used.
+		*/
+		virtual void setUsage( unsigned int usage ) {}
+
+		/** The usage hint specifies in which context a GLMemory resource
+		is changed frequently. Geometries are always declared as GL_SOURCE_COMPUTE_TARGET.
+		@return Returns the usage hint of an GLMemoryAdapter.
+		*/
+		virtual unsigned int getUsage() const { return osgCompute::GL_SOURCE_COMPUTE_TARGET; }
+
+		/** Overloaded rendering function from osg::Geometry. Checks
+		if is necessary to unmap the memory from the CUDA context and afterwards
+		calls osg::Geometry::drawImplementation().
+		@param[in] renderInfo reference to the current render information.
+		*/
+        virtual void drawImplementation(osg::RenderInfo& renderInfo) const;
+        
+		/** Overloaded from osg::Geometry. Will unregister the memory from 
+		the CUDA context if state is connected to the CUDA device.
+		@param[in] state pointer to the current state object.
+		*/
+		virtual void releaseGLObjects(osg::State* state=0) const;
+
+    protected:
+		/** Destructor. Will also release the GLMemory object.
+		*/
+        virtual ~Geometry();
+
+	private:
+		friend class GeometryMemory;
+
+        // Copy constructor and operator should not be called
+        Geometry( const Geometry& , const osg::CopyOp& ) {}
+		Geometry& operator=(const Geometry&) { return (*this); }
+
+		void clearLocal();
+
+		osg::ref_ptr<osgCompute::GLMemory> 	_memory;
+    };
+}
+
+#endif //OSGCUDA_GEOMETRY

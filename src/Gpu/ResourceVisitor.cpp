@@ -16,7 +16,7 @@ Gpu::ResourceVisitor::ResourceVisitor(bool randomize)
 	_nodeCount = 0;
 	_vertexBuffer = NULL;
 	_vertexOffsets = new QMap<qlonglong, unsigned int>;	
-	_edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge>>;
+	_edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge> >;
 	_randomize = randomize;
 
 	srand ( time(NULL) );
@@ -110,7 +110,7 @@ void Gpu::ResourceVisitor::addPositionResource()
 
 		//create vector with src and dst vertex offsets
 		std::vector<unsigned int>* edgeVertexOffsets = new std::vector<unsigned int>;
-		QMapIterator<qlonglong, osg::ref_ptr<Data::Edge>> iter(*_edges);
+		QMapIterator<qlonglong, osg::ref_ptr<Data::Edge> > iter(*_edges);
 		while (iter.hasNext()) 
 		{
 			osg::ref_ptr<Data::Edge> edge = iter.next().value();

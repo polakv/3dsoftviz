@@ -1,6 +1,8 @@
 #include "Viewer/CoreGraph.h"
 #include "Manager/Manager.h"
+#include "Gpu/LayoutModule.h"
 #include <osgUtil/Optimizer>
+#include <osgCuda/Computation>
 
 using namespace Vwr;
 
@@ -27,10 +29,6 @@ Vwr::CoreGraph::CoreGraph(Data::Graph * graph, osg::ref_ptr<osg::Camera> camera)
 	appConf = Util::ApplicationConfig::get();
 
 	root = new osgCuda::Computation();
-
-	//add layout module to computation node
-	root->addModule(*new Gpu::LayoutModule);
-
 	root->addChild(createSkyBox());
 	backgroundPosition = 0;
 
@@ -107,9 +105,13 @@ void CoreGraph::reload(Data::Graph * graph)
 	osgUtil::Optimizer opt;
 	opt.optimize(edgesGroup->getGroup(), osgUtil::Optimizer::CHECK_GEOMETRY);
 
-	//apply resource visitor to root node	
-	osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor(true);
-	visitor->apply(*root);
+	if(graph)
+	{
+		//add layout module and apply resource visitor to root node
+		root->addModule(*new Gpu::LayoutModule);
+		osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor(true);
+		visitor->apply(*root);
+	}
 }
 
 void CoreGraph::applyResourceVisitor()
@@ -133,12 +135,8 @@ void CoreGraph::cleanUp()
 	delete qmetaEdgesGroup;
 	delete edgesGroup;
 
-	//reset all compute modules and remove resources
-    std::vector<osg::ref_ptr<osgCompute::Module> >::iterator itr;
-	for(itr = root->getModules().begin(); itr != root->getModules().end(); itr++)
-	{
-		itr->get()->clear();
-	}
+	//remove modules and resources
+    root->removeModules();
 	root->removeResources();
 }
 

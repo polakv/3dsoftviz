@@ -14,7 +14,7 @@
 #include <osg/Depth>
 #include <osg/TextureCubeMap>
 #include <osg/AutoTransform>
-#include <osgCuda/Computation>
+#include <osgCompute/Computation>
 
 #include <QMap>
 #include <QLinkedList>
@@ -285,10 +285,10 @@ namespace Vwr
 		osg::ref_ptr<osg::Camera> camera;
 
 		/**
-		*  osg::ref_ptr<osgCuda::Computation> root
+		*  osg::ref_ptr<osgCompute::Computation> root
 		*  \brief root node
 		*/
-		osg::ref_ptr<osgCuda::Computation>	root;
+		osg::ref_ptr<osgCompute::Computation>	root;
 
 		/**
 		*  bool nodesFreezed

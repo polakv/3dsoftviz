@@ -1,0 +1,3 @@
+ADD_SUBDIRECTORY(Application)
+ADD_SUBDIRECTORY(TraceModule)
+ADD_SUBDIRECTORY(EmitModule)

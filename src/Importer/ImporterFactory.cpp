@@ -3,6 +3,7 @@
 #include "Importer/GraphMLImporter.h"
 #include "Importer/GXLImporter.h"
 #include "Importer/RSFImporter.h"
+#include "Importer/MTXImporter.h"
 //-----------------------------------------------------------------------------
 
 namespace Importer {
@@ -28,6 +29,11 @@ bool ImporterFactory::createByFileExtension (
 
 	if (0 == fileExtension.compare ("rsf", Qt::CaseInsensitive)) {
 		importer.reset (new RSFImporter);
+		importerFound = true;
+	}
+
+	if (0 == fileExtension.compare ("mtx", Qt::CaseInsensitive)) {
+		importer.reset (new MTXImporter);
 		importerFound = true;
 	}
 

@@ -544,7 +544,7 @@ bool CameraManipulator::handleKeyUp( const osgGA::GUIEventAdapter& ea, osgGA::GU
 	}
 	case osgGA::GUIEventAdapter::KEY_Up:
 	case osgGA::GUIEventAdapter::KEY_Down:
-		decelerateForwardRate = true;
+		decelerateVerticalRate = true;
 		break;
 
 	case osgGA::GUIEventAdapter::KEY_Right:
@@ -554,7 +554,7 @@ bool CameraManipulator::handleKeyUp( const osgGA::GUIEventAdapter& ea, osgGA::GU
 
 	case osgGA::GUIEventAdapter::KEY_Page_Up:
 	case osgGA::GUIEventAdapter::KEY_Page_Down:
-		decelerateVerticalRate = true;
+		decelerateForwardRate = true;
 		break;
 	}
 
@@ -576,15 +576,15 @@ bool CameraManipulator::handleKeyDown( const osgGA::GUIEventAdapter &ea, osgGA::
 	{
 	case osgGA::GUIEventAdapter::KEY_Up:
 		{
-			forwardSpeed = 2 * maxSpeed;
-			decelerateForwardRate = false;
+			verticalSpeed = 2 * maxSpeed;
+			decelerateVerticalRate = false;
 			break;
 		}
 
 	case osgGA::GUIEventAdapter::KEY_Down:
 		{
-			forwardSpeed = -2 * maxSpeed;
-			decelerateForwardRate = false;
+			verticalSpeed = -2 * maxSpeed;
+			decelerateVerticalRate = false;
 			break;
 		}
 
@@ -603,14 +603,14 @@ bool CameraManipulator::handleKeyDown( const osgGA::GUIEventAdapter &ea, osgGA::
 		}
 	case osgGA::GUIEventAdapter::KEY_Page_Up:
 		{
-			verticalSpeed = 2 * maxSpeed;
-			decelerateVerticalRate = false;
+			forwardSpeed = 2 * maxSpeed;
+			decelerateForwardRate = false;
 			break;
 		}
 	case osgGA::GUIEventAdapter::KEY_Page_Down:
 		{
-			verticalSpeed = -2 * maxSpeed;
-			decelerateVerticalRate = false;
+			forwardSpeed = -2 * maxSpeed;
+			decelerateForwardRate = false;
 			break;
 		}
 	}
