@@ -14,9 +14,9 @@
 Gpu::ResourceVisitor::ResourceVisitor(bool randomize)
 {	
 	_nodeCount = 0;
-	_vertexBuffer = NULL;
 	_vertexOffsets = new QMap<qlonglong, unsigned int>;	
 	_edges = new QMap<qlonglong, osg::ref_ptr<Data::Edge> >;
+	_vertexBuffer = NULL;		
 	_randomize = randomize;
 
 	srand ( time(NULL) );
@@ -51,7 +51,7 @@ void Gpu::ResourceVisitor::distribute(osg::Node& node)
 	Data::Node* dataNode = dynamic_cast<Data::Node*> ( &node );
 	if(NULL != dataNode && _vertexBuffer != NULL && _vertexOffsets->contains(dataNode->getId()))
 	{
-		osg::Vec3f targetPosition = _randomize ? this->getRandomLocation() : dataNode->getTargetPosition();
+		osg::Vec3f targetPosition = _randomize ? this->getRandomPosition() : dataNode->getTargetPosition();
         dataNode->setTargetPositionPtr((osg::Vec3*) _vertexBuffer->map(osgCompute::MAP_HOST_TARGET, _vertexOffsets->value(dataNode->getId()) * sizeof(osg::Vec4)));
 		dataNode->setTargetPosition(targetPosition);
 		dataNode->setCurrentPosition(dataNode->getTargetPosition() * graphScale);
@@ -133,7 +133,7 @@ void Gpu::ResourceVisitor::addPositionResource()
 	}
 }
 
-osg::Vec3f Gpu::ResourceVisitor::getRandomLocation() 
+osg::Vec3f Gpu::ResourceVisitor::getRandomPosition() 
 {
 	double PI = acos((double) - 1);
 	double l = getRandomDouble() * 30;	

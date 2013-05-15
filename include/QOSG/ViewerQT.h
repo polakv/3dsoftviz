@@ -14,18 +14,6 @@
 
 #include "Viewer/CameraManipulator.h"
 
-/*!
-* \brief
-* Widget, ktoryzobrazuje OSG sceny.
-*
-* \author
-* Michal Paprcka
-* \version 
-* 1.0
-* \date 
-* 1.12.2009
-*/
-
 namespace QOSG
 {
 	/**

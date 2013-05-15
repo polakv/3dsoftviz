@@ -282,7 +282,7 @@ void CoreWindow::createToolBar()
 	slider = new QSlider(Qt::Vertical,this);
 	slider->setTickPosition(QSlider::TicksAbove);
 	slider->setTickInterval(5);
-	slider->setValue(5);
+	slider->setValue((int) (Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.Alpha").toFloat() * 2000));
 	slider->setFocusPolicy(Qt::NoFocus);	
 	connect(slider,SIGNAL(valueChanged(int)),this,SLOT(sliderValueChanged(int)));
 	
@@ -381,7 +381,7 @@ void CoreWindow::playPause()
 		coreGraph->setNodesFreezed(true);
 		coreGraph->getComputeNode()->disable();
 		
-		//layout->pause();
+        statusBar()->showMessage("Layout paused");
 	}
 	else
 	{
@@ -390,7 +390,7 @@ void CoreWindow::playPause()
 		coreGraph->setNodesFreezed(false);
 		coreGraph->getComputeNode()->enable();
 
-		//layout->play();
+        statusBar()->showMessage("Layout resumed");
 	}
 }
 
@@ -449,7 +449,7 @@ void CoreWindow::addMetaNode()
 		}
 
 		if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	}
 }
 
@@ -463,7 +463,7 @@ void CoreWindow::unFixNodes()
 	viewerWidget->getPickHandler()->toggleSelectedNodesFixedState(false);
 	
 	if (isPlaying)
-		layout->play();
+        coreGraph->getComputeNode()->enable();
 }
 
 void CoreWindow::mergeNodes()
@@ -486,7 +486,7 @@ void CoreWindow::mergeNodes()
 		viewerWidget->getPickHandler()->unselectPickedNodes(0);
 
 		if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	}
 }
 
@@ -506,7 +506,7 @@ void CoreWindow::separateNodes()
 		}
 
 		if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	}
 }
 
@@ -526,16 +526,15 @@ void CoreWindow::removeMetaNodes()
 	}
 
 	if (isPlaying)
-		layout->play();
+        coreGraph->getComputeNode()->enable();
 }
 
 void CoreWindow::loadFile()
 {
-	//treba overit
-	layout->pause();
+	coreGraph->getComputeNode()->disable();
 	coreGraph->setNodesFreezed(true);
 	QString fileName = QFileDialog::getOpenFileName(this,
-		tr("Open file"), ".", tr("GraphML files (*.graphml);;GXL files (*.gxl);;RSF files (*.rsf)"));
+		tr("Open file"), ".", tr("GraphML files (*.graphml);;GXL files (*.gxl);;RSF files (*.rsf);;Matrix Market files (*.mtx)"));
 
 	if (fileName != "") {
 		Manager::GraphManager::getInstance()->loadGraph(fileName);
@@ -543,10 +542,9 @@ void CoreWindow::loadFile()
 		viewerWidget->getCameraManipulator()->home();
 	}
 
-	//treba overit ci funguje
 	if (isPlaying)
 	{
-		layout->play();
+		coreGraph->getComputeNode()->enable();
 		coreGraph->setNodesFreezed(false);
 	}
 }
@@ -576,7 +574,11 @@ void CoreWindow::labelOnOff(bool)
 
 void CoreWindow::sliderValueChanged(int value)
 {	
-	layout->setAlphaValue((float)value * 0.001);
+	Util::ApplicationConfig::get()->add("Gpu.LayoutAlgorithm.Alpha", QString::number(value * 0.0005f, 'f', 3));
+	if(coreGraph->getComputeNode()->hasModule("LAYOUT_MODULE") && value > 0)
+	{
+		(dynamic_cast<Gpu::LayoutModule*> (coreGraph->getComputeNode()->getModule("LAYOUT_MODULE")))->initAlgorithmParameters();
+	}
 }
 
 
@@ -756,7 +758,7 @@ void CoreWindow::setRestrictionToSelectedNodes (
 	}
 
 	if (isPlaying)
-		layout->play();
+        coreGraph->getComputeNode()->enable();
 }
 
 bool CoreWindow::add_EdgeClick()
@@ -818,7 +820,7 @@ bool CoreWindow::add_EdgeClick()
 	
 	currentGraph->addEdge("GUI_edge", node1, node2, type, false);
 	if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	QString nodename1 = QString(node1->getName());
 	QString nodename2 = QString(node2->getName());
 	return true;
@@ -839,7 +841,7 @@ bool CoreWindow::add_NodeClick()
 		osg::ref_ptr<Data::Node> node1 = currentGraph->addNode("newNode", currentGraph->getNodeMetaType(), position);	
 
 		if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	}
 	else
 	{
@@ -848,7 +850,7 @@ bool CoreWindow::add_NodeClick()
 		Data::MetaType* type = currentGraph->addMetaType(Data::GraphLayout::META_NODE_TYPE);
 		osg::ref_ptr<Data::Node> node1 = currentGraph->addNode("newNode", type);	
 		if (isPlaying)
-			layout->play();
+            coreGraph->getComputeNode()->enable();
 	}
 	return true;
 }
@@ -876,7 +878,7 @@ bool CoreWindow::removeClick()
 	int NodesCount=currentGraph->getNodes()->size();
 	cout<<NodesCount;
 	if (isPlaying)
-		layout->play();
+        coreGraph->getComputeNode()->enable();
 
 	return true;
 }

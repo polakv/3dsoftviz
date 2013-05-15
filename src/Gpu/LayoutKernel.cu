@@ -6,16 +6,16 @@
 #ifndef GPU_LAYOUTKERNEL
 #define GPU_LAYOUTKERNEL 1
 
-#include <math.h>
 #include <stdio.h>
+#include <math.h>
 
 #define NUM_THREADS 256 
 
+__constant__ float alpha;
+__constant__ float minMovement;
+__constant__ float maxMovement;
+__constant__ float flexibility;
 __constant__ float calmEdgeLength;
-__constant__ float alpha = 0.005;
-__constant__ float minMovement = 0.05;
-__constant__ float maxMovement = 30;
-__constant__ float stiffness = 0.7;
 
 texture<float4, cudaTextureType1D, cudaReadModeElementType> texVertices;
 texture<uint2, cudaTextureType1D, cudaReadModeElementType> texEdges;
@@ -165,14 +165,14 @@ void applyKernel( float4* vertices, unsigned int numVertices, float4* velocities
 	force.y = force.y / length;
 	force.z = force.z / length;
 	
-	float optimalLength = length < maxMovement ?  length :  5;
-	force = (force * optimalLength) + velocities[vertexIdx];
+	float optimalLength = length < maxMovement ?  length : maxMovement;
+	force = length > minMovement ? (force * optimalLength) + velocities[vertexIdx] : make_float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	unsigned int fixedFlag = ((unsigned int) vertices[vertexIdx].w) >> 1 & 1;
 	force = force * (fixedFlag ^ 1);
 
 	vertices[vertexIdx] = vertices[vertexIdx] + force;
-	velocities[vertexIdx] = force * stiffness;
+	velocities[vertexIdx] = force * flexibility;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -189,10 +189,15 @@ float computeCalm(unsigned int numVertices, float sizeFactor)
 }
 
 extern "C" __host__
-void initKernelConstants(unsigned int numVertices, float sizeFactor)
+void initKernelConstants(float alphaValue, float minMovementValue, float maxMovementValue, float flexibilityValue, float sizeFactor, unsigned int numVertices)
 {
-	float calmEdgeLength = computeCalm(numVertices, sizeFactor);
-	cudaMemcpyToSymbol("calmEdgeLength", &calmEdgeLength, sizeof(float));
+	cudaMemcpyToSymbol(alpha, &alphaValue, sizeof(float));
+	cudaMemcpyToSymbol(minMovement, &minMovementValue, sizeof(float));
+	cudaMemcpyToSymbol(maxMovement, &maxMovementValue, sizeof(float));
+	cudaMemcpyToSymbol(flexibility, &flexibilityValue, sizeof(float));
+
+	float calmEdgeLengthValue = computeCalm(numVertices, sizeFactor);
+	cudaMemcpyToSymbol(calmEdgeLength, &calmEdgeLengthValue, sizeof(float));
 }
 
 void checkCudaError(const char* message) 

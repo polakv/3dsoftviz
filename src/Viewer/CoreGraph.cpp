@@ -108,7 +108,10 @@ void CoreGraph::reload(Data::Graph * graph)
 	if(graph)
 	{
 		//add layout module and apply resource visitor to root node
-		root->addModule(*new Gpu::LayoutModule);
+		osg::ref_ptr<osgCompute::Module> layoutModule = new Gpu::LayoutModule;
+		layoutModule->addIdentifier("LAYOUT_MODULE");
+		root->addModule(*layoutModule);
+
 		osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor(true);
 		visitor->apply(*root);
 	}
@@ -274,6 +277,11 @@ void CoreGraph::reloadConfig()
 
 	root->setChild(labelsPosition, initEdgeLabels());
 	Vwr::TextureWrapper::reloadTextures();
+
+	if(root->hasModule("LAYOUT_MODULE"))
+	{
+		(dynamic_cast<Gpu::LayoutModule*> (root->getModule("LAYOUT_MODULE")))->initAlgorithmParameters();
+	}
 }
 
 CoreGraph::~CoreGraph(void)

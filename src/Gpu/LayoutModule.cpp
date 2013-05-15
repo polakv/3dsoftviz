@@ -2,12 +2,13 @@
  * LayoutModule.cpp
  * Projekt 3DVisual
  */
-#include <cuda_runtime.h>
-#include "Gpu/LayoutModule.h"
 #include <QDebug>
+#include "Gpu/LayoutModule.h"
+#include "Util/ApplicationConfig.h"
 
 extern "C"
-void initKernelConstants(unsigned int numVertices, float sizeFactor);
+void initKernelConstants(float alphaValue, float minMovementValue, float maxMovementValue, 
+						 float flexibilityValue, float sizeFactor, unsigned int numVertices);
 
 extern "C"
 void computeLayout(void* vertexBuffer, unsigned int vertexBufferSize, void* velocityBuffer,
@@ -22,8 +23,18 @@ bool Gpu::LayoutModule::init()
         return false;
     }
 
-	initKernelConstants(_vertexBuffer->getDimension(0), 0.4f);
+	this->initAlgorithmParameters();
 	return osgCompute::Module::init();
+}
+
+void Gpu::LayoutModule::initAlgorithmParameters()
+{
+	float alpha = Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.Alpha").toFloat();
+	float minMovement = Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.MinMovement").toFloat();
+	float maxMovement = Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.MaxMovement").toFloat();
+	float flexibility = Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.Flexibility").toFloat();
+	float sizeFactor = Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.GraphSize").toFloat();
+	initKernelConstants(alpha, minMovement, maxMovement, flexibility, sizeFactor, _vertexBuffer->getDimension(0));
 }
 
 void Gpu::LayoutModule::launch()

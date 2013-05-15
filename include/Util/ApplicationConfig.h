@@ -17,11 +17,6 @@ using namespace std;
 
 typedef QMap<QString, QString> MapSS;
 
-/*!
- * \brief
- * Pomocne triedy aplikacie
- * 
- */
 namespace Util
 {
 	/*!
