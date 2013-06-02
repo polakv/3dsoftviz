@@ -1,2 +1,5 @@
-ADD_SUBDIRECTORY(osgCompute-1.1)
+IF(CUDA_FOUND)
+  ADD_SUBDIRECTORY(osgCompute-1.1)
+ENDIF()
+
 ADD_SUBDIRECTORY(libnoisesrc-1.0.0)

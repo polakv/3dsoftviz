@@ -1,3 +1,12 @@
+#ifdef HAVE_CUDA
+	#define LAYOUT_PLAY coreGraph->getComputeNode()->enable()
+	#define LAYOUT_PAUSE coreGraph->getComputeNode()->enable()
+#else
+	#define LAYOUT_PLAY layout->play()
+	#define LAYOUT_PAUSE layout->pause()
+#endif
+
+
 #include "QOSG/CoreWindow.h"
 #include "Util/Cleaner.h"
 
@@ -282,7 +291,11 @@ void CoreWindow::createToolBar()
 	slider = new QSlider(Qt::Vertical,this);
 	slider->setTickPosition(QSlider::TicksAbove);
 	slider->setTickInterval(5);
-	slider->setValue((int) (Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.Alpha").toFloat() * 2000));
+	#ifdef HAVE_CUDA
+		slider->setValue((int) (Util::ApplicationConfig::get()->getValue("Gpu.LayoutAlgorithm.Alpha").toFloat() * 2000));
+	#else
+		slider->setValue(5);
+	#endif
 	slider->setFocusPolicy(Qt::NoFocus);	
 	connect(slider,SIGNAL(valueChanged(int)),this,SLOT(sliderValueChanged(int)));
 	
@@ -378,8 +391,8 @@ void CoreWindow::playPause()
 	{
 		play->setIcon(QIcon("img/gui/play.png"));
 		isPlaying = 0;
+		LAYOUT_PLAY;
 		coreGraph->setNodesFreezed(true);
-		coreGraph->getComputeNode()->disable();
 		
         statusBar()->showMessage("Layout paused");
 	}
@@ -388,7 +401,7 @@ void CoreWindow::playPause()
 		play->setIcon(QIcon("img/gui/pause.png"));
 		isPlaying = 1;
 		coreGraph->setNodesFreezed(false);
-		coreGraph->getComputeNode()->enable();
+		LAYOUT_PAUSE;
 
         statusBar()->showMessage("Layout resumed");
 	}
@@ -449,7 +462,7 @@ void CoreWindow::addMetaNode()
 		}
 
 		if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+            LAYOUT_PLAY;
 	}
 }
 
@@ -463,7 +476,7 @@ void CoreWindow::unFixNodes()
 	viewerWidget->getPickHandler()->toggleSelectedNodesFixedState(false);
 	
 	if (isPlaying)
-        coreGraph->getComputeNode()->enable();
+        LAYOUT_PLAY;
 }
 
 void CoreWindow::mergeNodes()
@@ -486,7 +499,7 @@ void CoreWindow::mergeNodes()
 		viewerWidget->getPickHandler()->unselectPickedNodes(0);
 
 		if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+            LAYOUT_PLAY;
 	}
 }
 
@@ -506,7 +519,7 @@ void CoreWindow::separateNodes()
 		}
 
 		if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+            LAYOUT_PLAY;
 	}
 }
 
@@ -526,12 +539,12 @@ void CoreWindow::removeMetaNodes()
 	}
 
 	if (isPlaying)
-        coreGraph->getComputeNode()->enable();
+        LAYOUT_PLAY;
 }
 
 void CoreWindow::loadFile()
 {
-	coreGraph->getComputeNode()->disable();
+	LAYOUT_PAUSE;
 	coreGraph->setNodesFreezed(true);
 	QString fileName = QFileDialog::getOpenFileName(this,
 		tr("Open file"), ".", tr("GraphML files (*.graphml);;GXL files (*.gxl);;RSF files (*.rsf);;Matrix Market files (*.mtx)"));
@@ -544,7 +557,7 @@ void CoreWindow::loadFile()
 
 	if (isPlaying)
 	{
-		coreGraph->getComputeNode()->enable();
+		LAYOUT_PLAY;
 		coreGraph->setNodesFreezed(false);
 	}
 }
@@ -574,11 +587,15 @@ void CoreWindow::labelOnOff(bool)
 
 void CoreWindow::sliderValueChanged(int value)
 {	
-	Util::ApplicationConfig::get()->add("Gpu.LayoutAlgorithm.Alpha", QString::number(value * 0.0005f, 'f', 3));
-	if(coreGraph->getComputeNode()->hasModule("LAYOUT_MODULE") && value > 0)
-	{
-		(dynamic_cast<Gpu::LayoutModule*> (coreGraph->getComputeNode()->getModule("LAYOUT_MODULE")))->initAlgorithmParameters();
-	}
+	#ifdef HAVE_CUDA
+		Util::ApplicationConfig::get()->add("Gpu.LayoutAlgorithm.Alpha", QString::number(value * 0.0005f, 'f', 3));
+		if(coreGraph->getComputeNode()->hasModule("LAYOUT_MODULE") && value > 0)
+		{
+			(dynamic_cast<Gpu::LayoutModule*> (coreGraph->getComputeNode()->getModule("LAYOUT_MODULE")))->initAlgorithmParameters();
+		}
+	#else
+		layout->setAlphaValue((float)value * 0.001);
+	#endif
 }
 
 
@@ -758,7 +775,7 @@ void CoreWindow::setRestrictionToSelectedNodes (
 	}
 
 	if (isPlaying)
-        coreGraph->getComputeNode()->enable();
+        LAYOUT_PLAY;
 }
 
 bool CoreWindow::add_EdgeClick()
@@ -820,7 +837,7 @@ bool CoreWindow::add_EdgeClick()
 	
 	currentGraph->addEdge("GUI_edge", node1, node2, type, false);
 	if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+		LAYOUT_PLAY;
 	QString nodename1 = QString(node1->getName());
 	QString nodename2 = QString(node2->getName());
 	return true;
@@ -841,7 +858,7 @@ bool CoreWindow::add_NodeClick()
 		osg::ref_ptr<Data::Node> node1 = currentGraph->addNode("newNode", currentGraph->getNodeMetaType(), position);	
 
 		if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+            LAYOUT_PLAY;
 	}
 	else
 	{
@@ -850,7 +867,7 @@ bool CoreWindow::add_NodeClick()
 		Data::MetaType* type = currentGraph->addMetaType(Data::GraphLayout::META_NODE_TYPE);
 		osg::ref_ptr<Data::Node> node1 = currentGraph->addNode("newNode", type);	
 		if (isPlaying)
-            coreGraph->getComputeNode()->enable();
+            LAYOUT_PLAY;
 	}
 	return true;
 }
@@ -878,7 +895,7 @@ bool CoreWindow::removeClick()
 	int NodesCount=currentGraph->getNodes()->size();
 	cout<<NodesCount;
 	if (isPlaying)
-        coreGraph->getComputeNode()->enable();
+        LAYOUT_PLAY;
 
 	return true;
 }

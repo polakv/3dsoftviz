@@ -2,6 +2,8 @@
  * ResourceVisitor.cpp
  * Projekt 3DVisual
  */
+#ifdef HAVE_CUDA
+
 #include "Gpu/ResourceVisitor.h"
 #include "Data/Node.h"
 #include <osg/AutoTransform>
@@ -157,3 +159,5 @@ void Gpu::ResourceVisitor::clearLocal()
 	_vertexOffsets->clear();
 	_edges->clear();
 }
+
+#endif //HAVE_CUDA

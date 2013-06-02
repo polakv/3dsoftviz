@@ -10,7 +10,6 @@
 #include "Viewer/TextureWrapper.h"
 
 #include <osgText/FadeText>
-#include <osgCompute/Computation>
 
 typedef osg::TemplateIndexArray<unsigned int, osg::Array::UIntArrayType,4,1> ColorIndexArray;
 

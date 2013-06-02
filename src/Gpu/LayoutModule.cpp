@@ -2,6 +2,8 @@
  * LayoutModule.cpp
  * Projekt 3DVisual
  */
+#ifdef HAVE_CUDA
+
 #include <QDebug>
 #include "Gpu/LayoutModule.h"
 #include "Util/ApplicationConfig.h"
@@ -70,3 +72,5 @@ void Gpu::LayoutModule::clearLocal()
 	_velocityBuffer = NULL;
 	_edgeBuffer = NULL;
 }
+
+#endif //HAVE_CUDA

@@ -14,7 +14,6 @@
 #include <osg/Depth>
 #include <osg/TextureCubeMap>
 #include <osg/AutoTransform>
-#include <osgCompute/Computation>
 
 #include <QMap>
 #include <QLinkedList>
@@ -35,8 +34,11 @@
 #include "Data/Node.h"
 #include "Data/Graph.h"
 
+#ifdef HAVE_CUDA
+#include <osgCompute/Computation>
 #include "Gpu/ResourceVisitor.h"
 #include "Gpu/LayoutModule.h"
+#endif
 
 namespace Vwr
 {
@@ -119,17 +121,6 @@ namespace Vwr
 		 */
 		osg::ref_ptr<osg::Group> const getScene()  { return root; }
 
-		/*!
-		 * \brief
-		 * Metoda, ktora vracia hlavny vypoctovy uzol sceny - root.
-		 * 
-		 * \returns
-		 * vrati odkaz na hlavny vypoctovy uzol 
-		 * 
-		 */
-		osg::ref_ptr<osgCompute::Computation> const getComputeNode()  { return root; }
-
-
 		/**
 		*  \fn inline public  setCamera(osg::ref_ptr<osg::Camera> camera)
 		*  \brief Sets current viewing camera to all edges
@@ -183,7 +174,24 @@ namespace Vwr
 			qmetaNodesGroup->freezeNodePositions();
 		}
 
-		void applyResourceVisitor();
+		#ifdef HAVE_CUDA
+		/*!
+		 * \brief
+		 * Metoda, ktora vracia hlavny vypoctovy uzol sceny - root.
+		 * 
+		 * \returns
+		 * vrati odkaz na hlavny vypoctovy uzol 
+		 * 
+		 */
+		osg::ref_ptr<osgCompute::Computation> const getComputeNode()  { return root; }
+
+		void applyResourceVisitor() 
+		{ 
+			osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor();
+			visitor->apply(*root);
+		}
+
+		#endif
 
 	private:
 
@@ -283,12 +291,20 @@ namespace Vwr
 		*  \brief current viewing camera
 		*/
 		osg::ref_ptr<osg::Camera> camera;
-
+		
+		#ifdef HAVE_CUDA
 		/**
 		*  osg::ref_ptr<osgCompute::Computation> root
 		*  \brief root node
 		*/
 		osg::ref_ptr<osgCompute::Computation>	root;
+		#else
+		/**
+		*  osg::ref_ptr<osg::Group> root
+		*  \brief root node
+		*/
+		osg::ref_ptr<osg::Group>	root;
+		#endif
 
 		/**
 		*  bool nodesFreezed

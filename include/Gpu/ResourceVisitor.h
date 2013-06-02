@@ -2,6 +2,8 @@
  * ResourceVisitor.h
  * Projekt 3DVisual
  */
+#ifdef HAVE_CUDA
+
 #ifndef GPU_RESOURCEVISITOR_DEF
 #define GPU_RESOURCEVISITOR_DEF 1
 
@@ -121,4 +123,5 @@ namespace Gpu
 	
 }
 
-#endif
+#endif //GPU_RESOURCEVISITOR_DEF
+#endif //HAVE_CUDA

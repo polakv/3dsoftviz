@@ -78,17 +78,20 @@ FIND_PACKAGE(Cuda)
 INCLUDE_DIRECTORIES(
   ${OPENGL_INCLUDE_DIR}
   ${OPENSCENEGRAPH_INCLUDE_DIRS} 
-  ${CUDA_INCLUDE_PATH}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_INCLUDE_PATH}
   ${CMAKE_CURRENT_BINARY_DIR} "./"
+  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/libnoisesrc-1.0.0/src
 )
 
-# Static libraries headers
-INCLUDE_DIRECTORIES(
-	  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/libnoisesrc-1.0.0/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/osgCompute-1.1/include
-)
+IF(CUDA_FOUND)
+     INCLUDE_DIRECTORIES(
+        ${CUDA_INCLUDE_PATH}
+        ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/Source/osgCompute-1.1/include
+     )
+     
+     ADD_DEFINITIONS(-DHAVE_CUDA)
+ENDIF()
 
 # Source files
 FILE(GLOB_RECURSE SRC  "src/*.cpp")
@@ -111,20 +114,26 @@ SET(SOURCES_H
 # toto makro spracuje Q_OBJECT a vygeneruje novy cpp subor, ktory bude dostupny v ${SOURCES_H_MOC} premennej
 QT4_WRAP_CPP( SOURCES_H_MOC ${SOURCES_H} )
 
-# collect cuda kernel sources
-SET(MY_CUDA_SOURCE_FILES
-  ./src/Gpu/LayoutKernel.cu
-)
-
-# Use the WRAP_CUDA macro.
-WRAP_CUDA( CUDA_FILES ${MY_CUDA_SOURCE_FILES} )
-
 SET(SRC
     ${SRC}
     ${SOURCES_H_MOC}
+) 
+
+IF(CUDA_FOUND)
+  # collect cuda kernel sources
+  SET(MY_CUDA_SOURCE_FILES
+    ./src/Gpu/LayoutKernel.cu
+  )
+  
+  # Use the WRAP_CUDA macro.
+  WRAP_CUDA( CUDA_FILES ${MY_CUDA_SOURCE_FILES} )
+  
+  SET(SRC
+    ${SRC}
     ${CUDA_FILES}
     ${MY_CUDA_SOURCE_FILES}
-)  
+  )       
+ENDIF()
 
 ADD_EXECUTABLE(3DVisual ${INCL} ${SRC})
 
@@ -165,11 +174,16 @@ TARGET_LINK_LIBRARIES(3DVisual
   ${OPENGL_LIBRARIES} 
   ${OPENSCENEGRAPH_LIBRARIES} 
   ${OSGVIEWER_LIBRARIES}
-  ${CUDA_RUNTIME_LIBRARY}
-  osgCompute
-  osgCuda
   noise
 )
+
+IF(CUDA_FOUND)
+  TARGET_LINK_LIBRARIES(3DVisual	
+    ${CUDA_RUNTIME_LIBRARY}
+    osgCompute
+    osgCuda
+  )
+ENDIF()
 
 #~ INSTALL(TARGETS 3DVisual DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/_INSTALL/Debug CONFIGURATIONS Debug) 
 #~ INSTALL(TARGETS 3DVisual DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/_install/Release CONFIGURATIONS Release) 

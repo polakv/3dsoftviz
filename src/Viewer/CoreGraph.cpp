@@ -1,8 +1,10 @@
 #include "Viewer/CoreGraph.h"
-#include "Manager/Manager.h"
-#include "Gpu/LayoutModule.h"
 #include <osgUtil/Optimizer>
-#include <osgCuda/Computation>
+
+#ifdef HAVE_CUDA
+	#include "Gpu/LayoutModule.h"
+	#include <osgCuda/Computation>
+#endif
 
 using namespace Vwr;
 
@@ -28,7 +30,11 @@ Vwr::CoreGraph::CoreGraph(Data::Graph * graph, osg::ref_ptr<osg::Camera> camera)
 
 	appConf = Util::ApplicationConfig::get();
 
-	root = new osgCuda::Computation();
+	#ifdef HAVE_CUDA
+		root = new osgCuda::Computation();
+	#else
+		root = new osg::Group();
+	#endif
 	root->addChild(createSkyBox());
 	backgroundPosition = 0;
 
@@ -105,6 +111,7 @@ void CoreGraph::reload(Data::Graph * graph)
 	osgUtil::Optimizer opt;
 	opt.optimize(edgesGroup->getGroup(), osgUtil::Optimizer::CHECK_GEOMETRY);
 
+	#ifdef HAVE_CUDA
 	if(graph)
 	{
 		//add layout module and apply resource visitor to root node
@@ -115,12 +122,7 @@ void CoreGraph::reload(Data::Graph * graph)
 		osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor(true);
 		visitor->apply(*root);
 	}
-}
-
-void CoreGraph::applyResourceVisitor()
-{
-	osg::ref_ptr<Gpu::ResourceVisitor> visitor = new Gpu::ResourceVisitor();
-	visitor->apply(*root);
+	#endif
 }
 
 void CoreGraph::cleanUp()
@@ -138,9 +140,11 @@ void CoreGraph::cleanUp()
 	delete qmetaEdgesGroup;
 	delete edgesGroup;
 
+	#ifdef HAVE_CUDA
 	//remove modules and resources
     root->removeModules();
 	root->removeResources();
+	#endif
 }
 
 
@@ -240,12 +244,22 @@ void CoreGraph::update()
 	root->addChild(initCustomNodes());
 }
 
+#ifdef HAVE_CUDA
 void CoreGraph::synchronize()
 {
 	bool changed = nodesGroup->synchronizeNodes() || edgesGroup->synchronizeEdges() || qmetaNodesGroup->synchronizeNodes() || qmetaEdgesGroup->synchronizeEdges();
 	if(changed)
 		this->applyResourceVisitor();
 }
+#else
+void CoreGraph::synchronize()
+{
+	nodesGroup->synchronizeNodes();
+	edgesGroup->synchronizeEdges();
+	qmetaNodesGroup->synchronizeNodes();
+	qmetaEdgesGroup->synchronizeEdges();
+}
+#endif
 
 void CoreGraph::setEdgeLabelsVisible(bool visible)
 {
@@ -278,10 +292,12 @@ void CoreGraph::reloadConfig()
 	root->setChild(labelsPosition, initEdgeLabels());
 	Vwr::TextureWrapper::reloadTextures();
 
+	#ifdef HAVE_CUDA
 	if(root->hasModule("LAYOUT_MODULE"))
 	{
 		(dynamic_cast<Gpu::LayoutModule*> (root->getModule("LAYOUT_MODULE")))->initAlgorithmParameters();
 	}
+	#endif
 }
 
 CoreGraph::~CoreGraph(void)

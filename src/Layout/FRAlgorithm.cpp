@@ -326,8 +326,7 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 	osg::Vec3f originalTargetPosition = node->getTargetPosition ();
 
 	osg::Vec3f computedTargetPosition = originalTargetPosition + fv;
-	osg::Vec3f restrictedTargetPosition = graph->getRestrictionsManager ().applyRestriction (*node, computedTargetPosition);
-	node->setTargetPosition(restrictedTargetPosition);
+	node->setTargetPosition(computedTargetPosition);
 	// [GrafIT]
 
 	// energeticka strata = 1-flexibilita
@@ -335,7 +334,7 @@ bool FRAlgorithm::applyForces(Data::Node* node)
 	node->setVelocity(fv); // ulozime novu rychlost
 
 	// [GrafIT][.] if something has been changed is now determined  by the change of target position
-	return (restrictedTargetPosition != originalTargetPosition);
+	return (computedTargetPosition != originalTargetPosition);
 	// [GrafIT]
 }
 

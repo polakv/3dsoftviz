@@ -2,6 +2,8 @@
  * LayoutModule.h
  * Projekt 3DVisual
  */
+#ifdef HAVE_CUDA
+
 #ifndef GPU_LAYOUTMODULE_DEF
 #define GPU_LAYOUTMODULE_DEF 1
 
@@ -101,4 +103,5 @@ namespace Gpu
 	
 }
 
-#endif
+#endif //GPU_LAYOUTMODULE_DEF
+#endif //#HAVE_CUDA
