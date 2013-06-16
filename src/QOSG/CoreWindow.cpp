@@ -1,6 +1,6 @@
 #ifdef HAVE_CUDA
 	#define LAYOUT_PLAY coreGraph->getComputeNode()->enable()
-	#define LAYOUT_PAUSE coreGraph->getComputeNode()->enable()
+	#define LAYOUT_PAUSE coreGraph->getComputeNode()->disable()
 #else
 	#define LAYOUT_PLAY layout->play()
 	#define LAYOUT_PAUSE layout->pause()
@@ -391,7 +391,7 @@ void CoreWindow::playPause()
 	{
 		play->setIcon(QIcon("img/gui/play.png"));
 		isPlaying = 0;
-		LAYOUT_PLAY;
+		LAYOUT_PAUSE;
 		coreGraph->setNodesFreezed(true);
 		
         statusBar()->showMessage("Layout paused");
@@ -401,7 +401,7 @@ void CoreWindow::playPause()
 		play->setIcon(QIcon("img/gui/pause.png"));
 		isPlaying = 1;
 		coreGraph->setNodesFreezed(false);
-		LAYOUT_PAUSE;
+		LAYOUT_PLAY;
 
         statusBar()->showMessage("Layout resumed");
 	}
